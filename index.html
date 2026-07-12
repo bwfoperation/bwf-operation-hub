@@ -1,4 +1,3 @@
-[BWF_Operation_Hub_MC.html](https://github.com/user-attachments/files/29936646/BWF_Operation_Hub_MC.html)
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1415,10 +1414,16 @@ function _saveGSConfig(config){
   }
 }
 const _gsCfg=_readGSConfig();
+// ── ฝัง Sheet ID / Web App URL ไว้ในไฟล์โดยตรง (Admin deploy ครั้งเดียว) ──
+// ทุกเครื่อง (PC/มือถือ) ที่เปิด link นี้จะเชื่อมต่อ Google Sheets อัตโนมัติทันที
+// ไม่ต้องเข้า Settings เพื่อกรอก Sheet ID / Web App URL อีก
+// (ค่าใน localStorage ผ่านหน้า Settings ยังใช้ override ได้ ถ้า Admin ต้องการเปลี่ยนปลายทางในอนาคต)
+const DEFAULT_SHEET_ID = '1sVNNKYSZE4nBmeJmf1_f3qoJlwG09O5REMCnGZRQUu0';
+const DEFAULT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwmHEHVRF5D_xo8kxp9IBNxZY8AZ2s3BBw5_6ANDa5vByT6k4yWV2nfp37E-t07Sv6nyQ/exec';
 const CONFIG = {
-  SHEET_ID: (_gsCfg&&_gsCfg.sheetId) || 'YOUR_GOOGLE_SHEET_ID',           // ← paste your Sheet ID
-  WEB_APP_URL: (_gsCfg&&_gsCfg.webAppUrl) || 'YOUR_APPS_SCRIPT_WEB_APP_URL', // ← paste deployed Apps Script URL
-  USE_LOCAL: !(_gsCfg && _gsCfg.sheetId && _gsCfg.webAppUrl),   // true = use localStorage (demo mode), false = use Google Sheets
+  SHEET_ID: (_gsCfg&&_gsCfg.sheetId) || DEFAULT_SHEET_ID,
+  WEB_APP_URL: (_gsCfg&&_gsCfg.webAppUrl) || DEFAULT_WEB_APP_URL,
+  USE_LOCAL: !((_gsCfg && _gsCfg.sheetId && _gsCfg.webAppUrl) || (DEFAULT_SHEET_ID && DEFAULT_WEB_APP_URL)),
 };
 
 // Detect if mobile (disable Google Sheets sync on mobile)
