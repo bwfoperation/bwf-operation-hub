@@ -3970,13 +3970,33 @@ async function copyShareableLink(){
   url.searchParams.set('sid', CONFIG.SHEET_ID);
   url.searchParams.set('gsurl', CONFIG.WEB_APP_URL);
   if(gs.email) url.searchParams.set('email', gs.email);
-  const link=url.toString();
+  const longLink=url.toString();
+  toast('⏳ กำลังสร้างลิงก์...','⏳');
+  const link=await shortenLink(longLink);
   try{
     await navigator.clipboard.writeText(link);
-    toast('คัดลอกลิ้งแล้ว — ส่งให้ทีมได้เลย เปิดแล้วเชื่อมชีตเดียวกันอัตโนมัติ','✓');
+    toast(link!==longLink?'คัดลอกลิงก์แบบย่อแล้ว — ส่งให้ทีมได้เลย เปิดแล้วเชื่อมชีตเดียวกันอัตโนมัติ':'คัดลอกลิ้งแล้ว — ส่งให้ทีมได้เลย เปิดแล้วเชื่อมชีตเดียวกันอัตโนมัติ','✓');
   }catch(e){
     // clipboard API can fail without HTTPS/permissions — fall back to a prompt so it's still usable
     askInput('คัดลอกลิ้งด้านล่างแล้วส่งให้ทีม:', link, ()=>{});
+  }
+}
+// ✅ #13: the link above must carry both the Sheet ID and the full Apps
+// Script Web App URL (Google's own deployment URLs run 100+ characters), so
+// the raw link easily runs past 250 characters — painful to read or paste by
+// hand, especially on mobile. TinyURL's create endpoint needs no API
+// key/login, so this shortens on a best-effort basis; if the request fails
+// for ANY reason (offline, the shortening service is down or blocked by a
+// network policy), it silently falls back to the full working link —
+// sharing never breaks because of this, the link just isn't as short.
+async function shortenLink(longUrl){
+  try{
+    const r=await fetchWithTimeout('https://tinyurl.com/api-create.php?url='+encodeURIComponent(longUrl), undefined, 5000);
+    if(!r.ok) return longUrl;
+    const short=(await r.text()).trim();
+    return /^https?:\/\//.test(short) ? short : longUrl;
+  }catch(e){
+    return longUrl;
   }
 }
 
