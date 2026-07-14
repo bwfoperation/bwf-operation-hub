@@ -98,6 +98,8 @@ img{max-width:100%}
 .page-h1{font-size:28px;font-weight:800;margin:0;color:var(--text);letter-spacing:-.5px}
 .topbar-right{display:flex;align-items:center;gap:10px}
 .notif-btn{position:relative;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);color:var(--text2);font-size:16px}
+.lang-btn{height:36px;padding:0 12px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:800;letter-spacing:.3px;cursor:pointer;touch-action:manipulation}
+.lang-btn:active{background:var(--orange-light);color:var(--orange-dark)}
 .notif-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;background:var(--orange);border-radius:50%;border:2px solid var(--surface)}
 .notif-num{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;border-radius:9px;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)}
 .user-chip{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:24px;cursor:pointer}
@@ -202,6 +204,12 @@ tbody tr{cursor:pointer}
 /* ── PRIORITY STARS ──────────────────────────────────── */
 .star{color:var(--orange);font-size:16px}
 .star-empty{color:var(--text3);font-size:16px}
+/* ✅ #4: bigger, more reliable tap target for priority-star toggles — the
+   padding+negative-margin trick expands the touch/click area without
+   shifting surrounding layout, plus touch-action/tap-highlight tweaks so
+   iOS Safari registers the tap on the first try instead of needing 2-3. */
+.star-tap{display:inline-flex;align-items:center;justify-content:center;padding:11px;margin:-11px;border-radius:50%;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(245,163,0,.18);user-select:none}
+.star-tap:active{background:rgba(245,163,0,.14)}
 
 /* ── ORDER CARDS (mobile list) ───────────────────────── */
 .order-row-product{display:flex;align-items:center;gap:12px}
@@ -209,6 +217,8 @@ tbody tr{cursor:pointer}
 
 /* ── QC MONITORING ───────────────────────────────────── */
 .qc-batch-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.qc-batch-card.qc-mini{cursor:pointer;transition:opacity .15s}
+.qc-batch-card.qc-mini:hover{opacity:1!important}
 .qc-batch-head{padding:16px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border)}
 .qc-batch-meta{flex:1}
 .qc-batch-id{font-size:16px;font-weight:700}
@@ -252,6 +262,9 @@ tbody tr{cursor:pointer}
 .qcx-card:hover{border-color:var(--orange)}
 .qcx-card.current{border-color:var(--blue);background:var(--blue-bg);box-shadow:0 0 0 3px #DBEAFE}
 .qcx-card.pending{background:var(--bg)}
+.qcx-card.over{border-color:var(--red);background:var(--red-bg);box-shadow:0 0 0 3px #FEE2E2}
+.qcx-card.over .qcx-val{color:var(--red-text)}
+.qc-batch-card.abnormal{border-color:var(--red)!important;box-shadow:0 0 0 1px var(--red)}
 .qcx-val{font-size:22px;font-weight:800;color:var(--text);line-height:1.05}
 .qcx-val.muted{color:var(--text3);font-size:15px;font-weight:700}
 .qcx-clabel{font-size:11px;color:var(--text2);font-weight:600}
@@ -549,7 +562,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
 .task-card.selected{border-color:var(--or);box-shadow:0 0 0 2px var(--or-l),var(--shm)}
 .task-card.overdue-card{border-left:3px solid var(--rd)}
 .tc-star{padding:0 4px 0 14px;flex-shrink:0}
-.star-btn{font-size:18px;background:none;border:none;cursor:pointer;line-height:1;padding:4px}
+.star-btn{font-size:18px;background:none;border:none;cursor:pointer;line-height:1;padding:10px;margin:-6px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(245,163,0,.18)}
 .tc-product{padding:12px 14px;display:flex;align-items:center;gap:12px;min-width:220px;border-right:1px solid var(--bd)}
 .prod-img{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;line-height:1.1;text-align:center;flex-shrink:0}
 .tc-prod-info{min-width:0}
@@ -757,25 +770,25 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
   <nav class="nav">
     <button class="nav-item active" onclick="navigate('dashboard',this)" id="nav-dashboard">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
-      Dashboard
+      <span data-i18n="nav.dashboard">Dashboard</span>
     </button>
     <button class="nav-item" onclick="navigate('orders',this)" id="nav-orders">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
-      Orders
+      <span data-i18n="nav.orders">Orders</span>
       <span class="nav-badge" id="orders-badge">14</span>
     </button>
     <button class="nav-item" onclick="navigate('qc',this)" id="nav-qc">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7 2a1 1 0 00-.707 1.707L7 4.414v3.758a1 1 0 01-.293.707l-4 4C.817 14.769 2.156 18 4.828 18h10.343c2.673 0 4.012-3.231 2.122-5.121l-4-4A1 1 0 0113 8.172V4.414l.707-.707A1 1 0 0013 2H7zm2 6.172V4h2v4.172a3 3 0 00.879 2.12l1.027 1.028a4 4 0 00-2.171.102l-.47.156a4 4 0 01-2.53 0l-.563-.187a1.993 1.993 0 00-.114-.035l1.063-1.063A3 3 0 009 8.172z" clip-rule="evenodd"/></svg>
-      QC Monitoring
+      <span data-i18n="nav.qc">QC Monitoring</span>
       <span class="nav-badge" id="qc-badge">3</span>
     </button>
     <button class="nav-item" onclick="navigate('schedule',this)" id="nav-schedule">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
-      Schedule
+      <span data-i18n="nav.schedule">Schedule</span>
     </button>
     <button class="nav-item" onclick="navigate('settings',this)" id="nav-settings">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
-      Settings
+      <span data-i18n="nav.settings">Settings</span>
     </button>
   </nav>
   <div class="sidebar-user">
@@ -795,7 +808,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       <button class="hamburger" onclick="toggleSidebar()">☰</button>
       <div class="topbar-brand" onclick="navigate('dashboard',document.getElementById('nav-dashboard'))">
         <span class="topbar-brand-mark">BWF</span>
-        <span class="topbar-brand-text"><b>BREW WITH FRIENDS</b><i>Operation Hub</i></span>
+        <span class="topbar-brand-text"><b>BREW WITH FRIENDS</b><i data-i18n="brand.subtitle">Operation Hub</i></span>
       </div>
       <h1 class="page-title" id="page-title" style="display:none">Dashboard</h1>
     </div>
@@ -804,6 +817,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
         <span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>
         <span id="sync-text">Synced</span>
       </div>
+      <button class="lang-btn" id="lang-btn" onclick="cycleLang()" title="Language / ภาษา / 语言">TH</button>
       <button class="notif-btn" onclick="openNotifications()">
         🔔
         <span class="notif-num">2</span>
@@ -910,8 +924,8 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       </div>
       <div class="tabs" id="qc-tabs">
         <div class="tab active" onclick="filterQC('all',this)">All Batches</div>
-        <div class="tab" onclick="filterQC('fermenting',this)">Fermenting</div>
-        <div class="tab" onclick="filterQC('conditioning',this)">Conditioning</div>
+        <div class="tab" onclick="filterQC('active',this)">Active</div>
+        <div class="tab" onclick="filterQC('ready',this)">Ready to Package</div>
         <div class="tab" onclick="filterQC('completed',this)">Completed</div>
       </div>
       <div class="filter-bar">
@@ -1019,19 +1033,19 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
 <nav class="mobile-nav">
   <div class="mobile-nav-inner">
     <button class="mobile-nav-btn active" onclick="navigate('dashboard',this)" id="mnav-dashboard">
-      <span class="mobile-nav-icon">🏠</span><span>Home</span>
+      <span class="mobile-nav-icon">🏠</span><span data-i18n="nav.home">Home</span>
     </button>
     <button class="mobile-nav-btn" onclick="navigate('orders',this)" id="mnav-orders">
-      <span class="mobile-nav-icon">📋</span><span>Orders</span>
+      <span class="mobile-nav-icon">📋</span><span data-i18n="nav.orders">Orders</span>
     </button>
     <button class="mobile-nav-btn" onclick="navigate('qc',this)" id="mnav-qc">
-      <span class="mobile-nav-icon">🔬</span><span>QC</span>
+      <span class="mobile-nav-icon">🔬</span><span data-i18n="nav.qc_short">QC</span>
     </button>
     <button class="mobile-nav-btn" onclick="navigate('schedule',this)" id="mnav-schedule">
-      <span class="mobile-nav-icon">📅</span><span>Schedule</span>
+      <span class="mobile-nav-icon">📅</span><span data-i18n="nav.schedule">Schedule</span>
     </button>
     <button class="mobile-nav-btn" onclick="navigate('settings',this)" id="mnav-settings">
-      <span class="mobile-nav-icon">⚙️</span><span>Settings</span>
+      <span class="mobile-nav-icon">⚙️</span><span data-i18n="nav.settings">Settings</span>
     </button>
   </div>
 </nav>
@@ -1049,12 +1063,19 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Order ID</label>
-          <input class="form-input" id="f-order-id" placeholder="Auto-generated">
+          <input class="form-input" id="f-order-id" placeholder="Auto-generated" readonly style="background:var(--bg);color:var(--text2);cursor:not-allowed">
         </div>
         <div class="form-group">
           <label class="form-label">Customer</label>
           <input class="form-input" id="f-order-customer" placeholder="Customer name">
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">ผู้รับ Order (Recipient)</label>
+          <input class="form-input" id="f-order-recipient" placeholder="ชื่อผู้รับ / ผู้ติดต่อสำหรับส่งของ">
+        </div>
+        <div class="form-group"></div>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -1439,6 +1460,26 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
   </div>
 </div>
 
+<!-- ✅ #10: Team Access PIN gate — shown to a device that opened a shared
+     Google Sheets link (via Copy Shareable Link) when the admin has set a
+     Team Access PIN in Settings → System. Deliberately has NO close/cancel
+     button: this is meant to actually block use until the correct PIN is
+     entered, not just be a dismissible hint. -->
+<div class="modal-overlay" id="modal-pin-gate" style="position:fixed;inset:0;background:rgba(17,24,39,.65);z-index:950;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border-radius:var(--radius);width:100%;max-width:360px;box-shadow:0 12px 40px rgba(0,0,0,.25);overflow:hidden">
+    <div style="padding:26px 24px 6px;text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">🔒</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:6px">ต้องใส่รหัส PIN ก่อนใช้งาน</div>
+      <div style="font-size:12.5px;color:var(--text3);margin-bottom:16px;line-height:1.6">แอดมินตั้งรหัสผ่านสำหรับผู้ที่เชื่อมต่อชีตนี้ไว้ — สอบถามรหัส PIN จากแอดมินของคุณ</div>
+      <input id="pin-gate-field" class="form-input" style="width:100%;text-align:center;letter-spacing:.3em;font-size:16px" type="password" inputmode="numeric" placeholder="••••">
+      <div id="pin-gate-error" style="display:none;color:var(--red-text);font-size:12px;margin-top:8px">รหัส PIN ไม่ถูกต้อง ลองอีกครั้ง</div>
+    </div>
+    <div style="display:flex;gap:10px;padding:20px 24px 24px">
+      <button class="btn btn-primary" style="flex:1" id="pin-gate-btn">ยืนยัน / Verify</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════ SCRIPT ═══════════ -->
 <script>
 // ══════════════════════════════════════════════════════
@@ -1535,7 +1576,7 @@ if(IS_IFRAME && window.parent){
 // Data collections that sync to Google Sheets (one tab per key) once connected
 // Only true row-collections (arrays) go through the generic sheet adapter —
 // singleton config objects (settings/branding/goalState) stay device-local.
-const SYNCED_KEYS=new Set(['products','orders','batches','tasks','users','timelineTemplates','qc_templates','taskDoneMap','audit_log']);
+const SYNCED_KEYS=new Set(['products','orders','batches','tasks','users','timelineTemplates','qc_templates','taskDoneMap','audit_log','team_pin']);
 let _syncTimers={};
 function queueSheetSync(sheet,rows){
   clearTimeout(_syncTimers[sheet]);
@@ -1761,11 +1802,15 @@ let currentPage='dashboard';
 let orderStatusFilter='all';
 let qcStatusFilter='all';
 let settingsTab='brewery';
+// ✅ #12: which batch cards are manually expanded out of their collapsed
+// (Ready to Package / Completed) mini view — session-only, like
+// orderExpanded, so it resets to "everything collapsed" on next visit.
+let qcExpandedSet=new Set();
 
 function navigate(page,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
-  document.getElementById('page-title').textContent=pageTitles[page]||page;
+  document.getElementById('page-title').textContent=t('pagetitle.'+page)||pageTitles[page]||page;
   // sidebar nav
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('nav-'+page)?.classList.add('active');
@@ -1777,6 +1822,84 @@ function navigate(page,btn){
   render(page);
 }
 const pageTitles={dashboard:'Dashboard',orders:'Orders',qc:'QC Monitoring',schedule:'Schedule',settings:'Settings'};
+
+// ══════════════════════════════════════════════════════
+//  #1: LANGUAGE / i18n — Thai / English / Chinese, applied to the sidebar
+//  & mobile nav menus, page titles, and the confirm-dialog ("questions")
+//  chrome app-wide. settings.language already existed as a stored field but
+//  had no UI and nothing ever read it — this wires it up for real.
+//  Per-call custom confirm/toast messages (already mostly authored in Thai
+//  throughout the app) are left as written; this covers the reusable UI
+//  chrome that's shown regardless of which screen/action triggered it.
+// ══════════════════════════════════════════════════════
+const I18N={
+  th:{
+    'nav.dashboard':'แดชบอร์ด','nav.orders':'ออเดอร์','nav.qc':'QC Monitoring','nav.qc_short':'QC',
+    'nav.schedule':'ตารางงาน','nav.settings':'ตั้งค่า','nav.home':'หน้าแรก',
+    'pagetitle.dashboard':'แดชบอร์ด','pagetitle.orders':'ออเดอร์','pagetitle.qc':'QC Monitoring',
+    'pagetitle.schedule':'ตารางงาน','pagetitle.settings':'ตั้งค่า',
+    'brand.subtitle':'Operation Hub',
+    'confirm.default_title':'ยืนยันหรือไม่?','confirm.default_yes':'ใช่, ดำเนินการต่อ','confirm.cancel':'ยกเลิก',
+    'settings.language_label':'ภาษา (Language)',
+    'settings.language_hint':'มีผลกับเมนู, กล่องยืนยันการทำงาน และข้อความแจ้งเตือนทั่วทั้งแอป',
+  },
+  en:{
+    'nav.dashboard':'Dashboard','nav.orders':'Orders','nav.qc':'QC Monitoring','nav.qc_short':'QC',
+    'nav.schedule':'Schedule','nav.settings':'Settings','nav.home':'Home',
+    'pagetitle.dashboard':'Dashboard','pagetitle.orders':'Orders','pagetitle.qc':'QC Monitoring',
+    'pagetitle.schedule':'Schedule','pagetitle.settings':'Settings',
+    'brand.subtitle':'Operation Hub',
+    'confirm.default_title':'Are you sure?','confirm.default_yes':'Yes, continue','confirm.cancel':'Cancel',
+    'settings.language_label':'Language',
+    'settings.language_hint':'Applies to menus, confirmation dialogs, and system messages across the whole app.',
+  },
+  zh:{
+    'nav.dashboard':'仪表盘','nav.orders':'订单','nav.qc':'质量监控','nav.qc_short':'QC',
+    'nav.schedule':'日程','nav.settings':'设置','nav.home':'首页',
+    'pagetitle.dashboard':'仪表盘','pagetitle.orders':'订单','pagetitle.qc':'质量监控',
+    'pagetitle.schedule':'日程','pagetitle.settings':'设置',
+    'brand.subtitle':'Operation Hub',
+    'confirm.default_title':'确定要这样做吗？','confirm.default_yes':'是，继续','confirm.cancel':'取消',
+    'settings.language_label':'语言',
+    'settings.language_hint':'适用于整个应用的菜单、确认对话框和系统提示信息。',
+  },
+};
+function getLang(){
+  const l=DB.get('settings',{}).language;
+  return (l==='th'||l==='en'||l==='zh')?l:'th';
+}
+function setLang(lang){
+  if(!I18N[lang]) return;
+  const s=DB.get('settings',{});
+  s.language=lang;
+  DB.set('settings',s);
+  applyI18N();
+}
+function cycleLang(){
+  const order=['th','en','zh'];
+  const next=order[(order.indexOf(getLang())+1)%order.length];
+  setLang(next);
+  render(currentPage); // refresh current page in case it shows translated content
+}
+function t(key){
+  const l=getLang();
+  return (I18N[l]&&I18N[l][key]) || (I18N.th&&I18N.th[key]) || '';
+}
+function applyI18N(){
+  const lang=getLang();
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.getAttribute('data-i18n');
+    const val=t(key);
+    if(val) el.textContent=val;
+  });
+  const langBtn=document.getElementById('lang-btn');
+  if(langBtn) langBtn.textContent=lang.toUpperCase();
+  const cancelBtn=document.getElementById('confirm-cancel-btn');
+  if(cancelBtn) cancelBtn.textContent=t('confirm.cancel');
+  const pageTitleEl=document.getElementById('page-title');
+  if(pageTitleEl) pageTitleEl.textContent=t('pagetitle.'+currentPage)||pageTitles[currentPage]||currentPage;
+  document.documentElement.setAttribute('lang', lang==='zh'?'zh-CN':lang);
+}
 
 function render(page){
   if(page==='dashboard') renderDashboard();
@@ -1816,9 +1939,9 @@ function askConfirm(message, onYes, opts){
   const pinError=document.getElementById('confirm-pin-error');
   const pinNopin=document.getElementById('confirm-pin-nopin');
   icon.textContent=opts.icon||'❓';
-  title.textContent=opts.title||'Are you sure?';
+  title.textContent=opts.title||t('confirm.default_title')||'Are you sure?';
   msg.textContent=message;
-  yesBtn.textContent=opts.confirmLabel||'Yes, continue';
+  yesBtn.textContent=opts.confirmLabel||t('confirm.default_yes')||'Yes, continue';
   yesBtn.className='btn '+(opts.danger?'btn-danger':'btn-primary');
   overlay.style.display='flex';
 
@@ -2111,7 +2234,7 @@ function renderDashboard(){
   });
   document.getElementById('dash-orders-tbody').innerHTML=dashOrders.slice(0,4).map(o=>`
     <tr onclick="dashOpenOrder('${o.id}')" style="cursor:pointer" title="Open this order">
-      <td><span class="${o.star?'star':'star-empty'}">${o.star?'★':'☆'}</span></td>
+      <td><span class="star-tap ${o.star?'star':'star-empty'}" onclick="event.stopPropagation();toggleOrderStar('${o.id}')" title="Toggle priority">${o.star?'★':'☆'}</span></td>
       <td><strong>${o.orderId}</strong></td>
       <td>
         <div style="display:flex;align-items:center;gap:8px">
@@ -2197,7 +2320,7 @@ function renderOrders(){
   const search=(document.getElementById('order-search')?.value||'').toLowerCase();
   let orders=DB.get('orders',[]);
   if(orderStatusFilter!=='all') orders=orders.filter(o=>o.status===orderStatusFilter||(orderStatusFilter==='released'&&o.status==='delivered'));
-  if(search) orders=orders.filter(o=>(o.orderId+o.style+o.product+o.customer).toLowerCase().includes(search));
+  if(search) orders=orders.filter(o=>(o.orderId+o.style+o.product+o.customer+(o.recipient||'')).toLowerCase().includes(search));
 
   // sort: starred first, then by ETA (soonest first)
   orders=orders.slice().sort((a,b)=>{
@@ -2210,7 +2333,7 @@ function renderOrders(){
   list.innerHTML=orders.map(o=>`
     <div class="card" style="margin-bottom:12px;overflow:hidden">
       <div style="display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer" onclick="toggleOrderDetail('${o.id}')">
-        <span onclick="event.stopPropagation();toggleOrderStar('${o.id}')" style="cursor:pointer;font-size:18px;color:${o.star?'var(--orange)':'var(--text3)'}">${o.star?'★':'☆'}</span>
+        <span class="star-tap" onclick="event.stopPropagation();toggleOrderStar('${o.id}')" style="font-size:18px;color:${o.star?'var(--orange)':'var(--text3)'}" title="Toggle priority">${o.star?'★':'☆'}</span>
         ${prodCircle(o.product,44,9,getProductAbbr(o.product)+'<br><span style="font-size:7px">'+o.id+'</span>')}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -2243,7 +2366,12 @@ function renderOrderDetail(o){
     {label:'Packaging',icon:'📦',status:o.status==='packaging'?'active':o.status==='delivered'?'done':'pending'},
     {label:'Finished',icon:'✅',status:o.status==='delivered'?'done':'pending'},
   ];
-  return `<div style="border-top:1px solid var(--border);padding:16px 20px;background:var(--bg)">
+  // ✅ #7: tapping the expanded detail area used to do nothing — only the
+  // header row (re-tapping it) could collapse it back. Now the whole detail
+  // panel collapses on tap too, matching how it expanded; the three action
+  // buttons below stop propagation so they still just do their own thing
+  // instead of also collapsing the card.
+  return `<div style="border-top:1px solid var(--border);padding:16px 20px;background:var(--bg);cursor:pointer" onclick="toggleOrderDetail('${o.id}')">
     <div style="display:flex;gap:24px;flex-wrap:wrap">
       <div style="flex:1;min-width:200px">
         <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Order Info</div>
@@ -2251,6 +2379,7 @@ function renderOrderDetail(o){
           <span style="color:var(--text3)">Order ID</span><strong>${o.orderId}</strong>
           <span style="color:var(--text3)">Order Date</span><span>${formatDate(o.brewDate||'2025-06-12')}</span>
           <span style="color:var(--text3)">Customer</span><span>${o.customer||'—'}</span>
+          <span style="color:var(--text3)">ผู้รับ Order</span><span>${o.recipient||'—'}</span>
           <span style="color:var(--text3)">Note</span><span style="color:var(--text2)">${o.note||'—'}</span>
         </div>
       </div>
@@ -2276,7 +2405,7 @@ function renderOrderDetail(o){
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end" onclick="event.stopPropagation()">
       <button class="btn btn-outline btn-sm" onclick="openEditOrder('${o.id}')">✏ Edit</button>
       <button class="btn btn-outline btn-sm" onclick="viewHistory('orders','${o.id}')">📊 History</button>
       <button class="btn btn-danger btn-sm" onclick="deleteOrder('${o.id}')">🗑 Delete</button>
@@ -2290,7 +2419,12 @@ function openOrderModal(editId=null){
   document.getElementById('order-edit-id').value=editId||'';
   document.getElementById('order-modal-title').textContent=editId?'Edit Order':'New Order';
   if(!editId){
-    ['f-order-id','f-order-customer','f-order-qty','f-order-note'].forEach(id=>document.getElementById(id).value='');
+    ['f-order-customer','f-order-recipient','f-order-qty','f-order-note'].forEach(id=>document.getElementById(id).value='');
+    // ✅ #3: Order ID is a fixed "BWF-" prefix + auto-incrementing unique
+    // number — no longer a free-text field the user (or orders.length math)
+    // could produce duplicates/odd formats with. This is just a preview;
+    // the number is actually reserved at save time in saveOrder().
+    document.getElementById('f-order-id').value=peekOrderId();
     document.getElementById('f-order-eta').value=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
     document.getElementById('f-order-status').value='pending';
     document.getElementById('f-order-priority').value='medium';
@@ -2299,6 +2433,7 @@ function openOrderModal(editId=null){
     if(!o) return;
     document.getElementById('f-order-id').value=o.orderId;
     document.getElementById('f-order-customer').value=o.customer||'';
+    document.getElementById('f-order-recipient').value=o.recipient||'';
     document.getElementById('f-order-product').value=o.product;
     document.getElementById('f-order-size').value=o.size;
     document.getElementById('f-order-qty').value=o.qty;
@@ -2329,6 +2464,39 @@ function calcOrderETA(product, fromDate){
   }catch(e){ return addDays(fromDate,14); }
 }
 
+// ✅ #3: Order ID is a FIXED "BWF-" prefix followed by an auto-incrementing
+// number, so it's never blank, never hand-typed, and never collides — the
+// old logic ('BWF'+String(orders.length+10)...) reused numbers as soon as
+// any order was deleted (length shrank), and the ID field was freely
+// editable, so nothing actually stopped duplicates.
+const ORDER_ID_PREFIX='BWF-';
+function nextOrderNumFrom(orders){
+  let max=0;
+  orders.forEach(o=>{
+    const m=String(o.id||o.orderId||'').match(/(\d+)\s*$/);
+    if(m){ const n=parseInt(m[1],10); if(n>max) max=n; }
+  });
+  return max+1;
+}
+// Preview only — does not reserve/persist the number (shown while the "New
+// Order" modal is open; mirrors how the Batch ID preview already works).
+function peekOrderId(){
+  const s=DB.get('settings',{});
+  const n=s.orderNextNum||nextOrderNumFrom(DB.get('orders',[]));
+  return ORDER_ID_PREFIX+String(n).padStart(3,'0');
+}
+// Actually reserves + persists the next number. Called once, at save time.
+function commitOrderId(){
+  const s=DB.get('settings',{});
+  const orders=DB.get('orders',[]);
+  let n=s.orderNextNum||nextOrderNumFrom(orders);
+  let id=ORDER_ID_PREFIX+String(n).padStart(3,'0');
+  while(orders.some(o=>o.id===id||o.orderId===id)){ n++; id=ORDER_ID_PREFIX+String(n).padStart(3,'0'); }
+  s.orderNextNum=n+1;
+  DB.set('settings',s);
+  return id;
+}
+
 async function saveOrder(){
   const editId=document.getElementById('order-edit-id').value;
   const product=document.getElementById('f-order-product').value;
@@ -2336,7 +2504,7 @@ async function saveOrder(){
   const prods=DB.get('products',[]);
   const p=prods.find(x=>x.id===product)||{};
   const orders=DB.get('orders',[]);
-  const id=editId||document.getElementById('f-order-id').value||('BWF'+String(orders.length+10).padStart(2,'0'));
+  const id=editId||commitOrderId();
   const priority=document.getElementById('f-order-priority').value;
   const brewDate=todayStr();
   let eta=document.getElementById('f-order-eta').value;
@@ -2349,16 +2517,23 @@ async function saveOrder(){
     eta,
     priority,
     customer:document.getElementById('f-order-customer').value,
+    recipient:document.getElementById('f-order-recipient').value,
     note:document.getElementById('f-order-note').value,
     star:false,brewDate:'',
   };
-  // ✅ Priority "High" auto-stars the order (#7) — can also be un/starred by
-  // hand afterward from the Orders list independently of this field.
+  // ✅ Priority "High" auto-stars the order (#7), and the star is meant to
+  // always mirror priority==='high' — the star icon is just the fast-path
+  // toggle for it (see toggleOrderStar below), not an independent flag.
+  // ✅ #8 fix: editing used to only ever ADD the star when priority became
+  // High, and otherwise silently *keep whatever star value already
+  // existed* — so downgrading High → Medium and saving left the star (and
+  // the red "HIGH Priority" badge, which reads o.star) stuck on. Now the
+  // star is unconditionally recomputed from priority on every save.
+  row.star = priority==='high';
   if(editId){
     const i=orders.findIndex(o=>o.id===editId);
-    if(i>=0){ row.star = priority==='high' ? true : orders[i].star; row.brewDate=orders[i].brewDate||brewDate; orders[i]=row; }
+    if(i>=0){ row.brewDate=orders[i].brewDate||brewDate; orders[i]=row; }
   } else {
-    row.star = priority==='high';
     row.brewDate = brewDate;
     orders.unshift(row);
   }
@@ -2392,6 +2567,13 @@ async function createBatchFromOrder(orderRow){
     const batchId=settings.batchPrefix+(settings.batchNextNum||'001');
     const tmpl=DB.get('qc_templates',[]).find(t=>t.id===productId);
     const hasTemplate=!!tmpl;
+    // ✅ #9: same "flag it, don't just silently guess" treatment as the QC
+    // template check above, but for the production Timeline — a batch whose
+    // product has no customized timeline still gets a full schedule (the
+    // generic 9-stage default), but the user is told so and pointed
+    // straight at Settings → Batch Settings to review/customize it.
+    const hasTimeline=hasCustomTimeline(productId);
+    const prodName=(DB.get('products',[]).find(p=>p.id===productId)||{}).name||productId;
 
     const batch={
       id:batchId, batchId, orderId:orderRow.orderId, product:productId,
@@ -2409,6 +2591,8 @@ async function createBatchFromOrder(orderRow){
       note:hasTemplate?(tmpl.notes||''):'',
       incomplete:!hasTemplate,
       incompleteReason:hasTemplate?'':`No QC template found for "${productId}" — go to QC Monitoring → Templates to set target ranges for this batch.`,
+      timelineIncomplete:!hasTimeline,
+      timelineIncompleteReason:hasTimeline?'':`ยังไม่เคยตั้งค่า Production Timeline เฉพาะสำหรับ "${prodName}" — ตอนนี้ auto-generate ตารางงานจาก Default (9 ขั้นตอนทั่วไป) ไปก่อน`,
     };
 
     const batches=DB.get('batches',[]);
@@ -2431,10 +2615,25 @@ async function createBatchFromOrder(orderRow){
     if(!hasTemplate){
       toast(`⚠️ Batch ${batchId} created but needs a QC template for "${productId}" — see QC Monitoring`,'⚠️');
     }
+    // ✅ #9: always notify when a batch is running on the generic default
+    // timeline instead of a real one for its product — with a direct link
+    // (via the batch card banner, and this toast) to go set it up.
+    if(!hasTimeline){
+      toast(`📅 Batch ${batchId} (${prodName}) ยังไม่มี Timeline เฉพาะ — ใช้ตารางเริ่มต้นไปก่อน แตะการ์ดใน QC Monitoring เพื่อตั้งค่า`,'📅');
+    }
   }catch(e){
     console.error('createBatchFromOrder error:',e);
     toast('Order saved, but batch auto-creation failed — check console','⚠️');
   }
+}
+
+// Jumps straight to Settings → Batch Settings with this product's timeline
+// pre-selected for editing (used by the "needs a timeline" banners/toasts).
+function goEditTimelineFor(productId){
+  window.tlEditRecipe=productId;
+  navigate('settings', document.getElementById('nav-settings'));
+  const btn=document.querySelector('#settings-tabs .tab[onclick*="batch"]')||document.querySelector('#settings-tabs .tab');
+  if(btn) filterSettings('batch',btn); else settingsTab='batch';
 }
 
 async function deleteOrder(id){
@@ -2454,6 +2653,11 @@ async function toggleOrderStar(id){
   if(i<0) return;
   orders[i].star=!orders[i].star;
   const newStar=orders[i].star;
+  // ✅ #8: star and priority must always agree (the badge/collapsed-row
+  // "HIGH Priority" label reads o.star, not o.priority) — starring via this
+  // quick tap now also bumps priority to High so saveOrder()'s unconditional
+  // star=priority==='high' can't silently undo a manual star later.
+  if(newStar) orders[i].priority='high';
   await Sheets.write('orders',orders);
   // cascade: starring an order also stars its linked batch + generated tasks,
   // so priority is visible consistently across Orders / QC / Schedule
@@ -2466,19 +2670,52 @@ async function toggleOrderStar(id){
     if(document.getElementById('task-board')) schRenderTasks();
   }
   renderOrders();
-  toast(newStar?'⭐ Set as priority':'Priority removed','✓');
+  if(typeof renderDashboard==='function' && document.getElementById('dash-orders-card')) renderDashboard();
+  if(newStar){
+    toast('⭐ Set as priority','✓');
+  } else {
+    // ✅ #4: removing the star while Priority is still "High" is a
+    // contradiction — saveOrder() force-re-stars on any edit while
+    // priority==='high'. So jump straight into Edit Order, focused on the
+    // Priority field, and ask again what level this order should be.
+    toast('เอาดาวออกแล้ว — เลือกระดับ priority ใหม่','⚠️');
+    openOrderModal(id);
+    setTimeout(focusPriorityField,150);
+  }
+}
+
+// Opens the Priority field for re-confirmation after an un-star (see above).
+// Downgrades an unchanged "High" to "Medium" first — otherwise saving the
+// modal untouched would silently re-star the order the user just un-starred.
+function focusPriorityField(){
+  const sel=document.getElementById('f-order-priority');
+  if(!sel) return;
+  if(sel.value==='high') sel.value='medium';
+  sel.focus();
+  sel.style.outline='2px solid var(--orange)';
+  sel.style.outlineOffset='2px';
+  sel.scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(()=>{ sel.style.outline=''; },1800);
 }
 
 // ══════════════════════════════════════════════════════
 //  QC MONITORING
 // ══════════════════════════════════════════════════════
+// ✅ #12a: dayFrom/dayTo give each checkpoint a rough expected window (parsed
+// straight from the existing label text — no new data entry required). Used
+// only to sort the QC Action Dashboard into Overdue/Due Today/Waiting — this
+// is a same-day-granularity heuristic against the batch's elapsed day count,
+// not a precise to-the-hour due time. Checkpoints with no natural fixed day
+// (fermentTemp is continuous; fg/ph depend on when fermentation actually
+// finishes) are left as null and just count as "due" whenever they're the
+// active step, since there's nothing meaningful to be "overdue" against.
 const QC_PARAMS=[
-  {key:'fermentTemp',label:'Ferment Temp'},
-  {key:'og',label:'OG (Day 0)'},
-  {key:'sg1',label:'SG #1 (Day 2-3)'},
-  {key:'sg2',label:'SG #2 (Day 5-7)'},
-  {key:'fg',label:'FG Stable'},
-  {key:'ph',label:'pH After Ferment'},
+  {key:'fermentTemp',label:'Ferment Temp',dayFrom:null,dayTo:null},
+  {key:'og',label:'OG (Day 0)',dayFrom:0,dayTo:1},
+  {key:'sg1',label:'SG #1 (Day 2-3)',dayFrom:2,dayTo:3},
+  {key:'sg2',label:'SG #2 (Day 5-7)',dayFrom:5,dayTo:7},
+  {key:'fg',label:'FG Stable',dayFrom:null,dayTo:null},
+  {key:'ph',label:'pH After Ferment',dayFrom:null,dayTo:null},
 ];
 
 function filterQC(status,btn){
@@ -2517,46 +2754,133 @@ function renderQC(){
   const archived=batches.filter(b=>b.status==='completed'&&b.completedAt&&(now-b.completedAt)>WEEK).length;
   batches=batches.filter(b=>!(b.status==='completed'&&b.completedAt&&(now-b.completedAt)>WEEK));
 
-  if(qcStatusFilter!=='all') batches=batches.filter(b=>b.status===qcStatusFilter||(qcStatusFilter==='completed'&&b.status==='completed')||(qcStatusFilter==='fermenting'&&b.status==='in-progress'));
-  if(search) batches=batches.filter(b=>(b.batchId+b.product+b.style).toLowerCase().includes(search));
+  // ✅ #12: attach each batch's computed flow + urgency category once, up
+  // front, so both filtering/sorting and rendering reuse the same values
+  // instead of recomputing computeQCFlow() multiple times per batch.
+  let rows=batches.map(b=>{
+    const flow=computeQCFlow(b);
+    const urgency=qcUrgency(b,flow);
+    return {b,flow,urgency};
+  });
 
-  // completed batches sink to the bottom of the list
-  batches=batches.slice().sort((a,b)=>(a.status==='completed'?1:0)-(b.status==='completed'?1:0));
+  // "Active" = still needs QC action (overdue/due/waiting on a checkpoint).
+  // "Ready" = QC fully recorded, just needs the manual advance to Packaging.
+  // "Completed" = full batch lifecycle done.
+  if(qcStatusFilter==='active') rows=rows.filter(r=>['overdue','due','waiting'].includes(r.urgency.key));
+  else if(qcStatusFilter==='ready') rows=rows.filter(r=>r.urgency.key==='ready');
+  else if(qcStatusFilter==='completed') rows=rows.filter(r=>r.urgency.key==='completed');
+  if(search) rows=rows.filter(r=>(r.b.batchId+r.b.product+r.b.style).toLowerCase().includes(search));
 
-  document.getElementById('qc-batch-list').innerHTML=batches.map(b=>renderBatchCard(b)).join('');
-  if(batches.length===0) document.getElementById('qc-batch-list').innerHTML=`<div class="empty"><div class="empty-icon">🔬</div><div class="empty-text">No batches found</div></div>`;
+  // ✅ #12: Action Dashboard sort — most urgent first (Overdue → Due Today →
+  // Waiting → Ready to Package → Completed), oldest brew date first within
+  // the same urgency so nothing sits forgotten at the bottom of its group.
+  rows.sort((x,y)=> x.urgency.rank-y.urgency.rank || (x.b.brewDate||'').localeCompare(y.b.brewDate||''));
+
+  const SECTION_LABELS={overdue:'⚠️ Overdue',due:'🕐 Due Today',waiting:'⏳ Waiting',ready:'📦 Ready to Package',completed:'✓ Completed'};
+  let html='', lastKey=null;
+  rows.forEach(r=>{
+    if(r.urgency.key!==lastKey){
+      lastKey=r.urgency.key;
+      const count=rows.filter(x=>x.urgency.key===lastKey).length;
+      html+=`<div style="font-size:11.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;margin:${html?'22px':'4px'} 0 8px 2px">${SECTION_LABELS[lastKey]||lastKey} (${count})</div>`;
+    }
+    html+=renderBatchCard(r.b,r.flow,r.urgency);
+  });
+  document.getElementById('qc-batch-list').innerHTML=html;
+  if(rows.length===0) document.getElementById('qc-batch-list').innerHTML=`<div class="empty"><div class="empty-icon">🔬</div><div class="empty-text">No batches found</div></div>`;
   document.getElementById('qc-badge').textContent=DB.get('batches',[]).filter(b=>b.status==='in-progress').length;
 }
 
-function renderBatchCard(b){
+// ✅ #12: batches whose QC is fully recorded (Ready to Package) or whose
+// whole lifecycle is done (Completed) collapse to a compact ~80-100px row —
+// same idea as the pre-existing "completed" collapse, now also applied to
+// "QC done but not yet advanced to Packaging" per Tony's request. Tapping
+// the row expands it back to the full card (real recorded values, not just
+// the QC template) via qcExpandedSet; tapping again re-collapses it.
+const BATCH_STAGE_ORDER=['pending','in-progress','packaging','completed'];
+function nextBatchStage(status){
+  const idx=BATCH_STAGE_ORDER.indexOf(status);
+  return (idx>=0 && idx<BATCH_STAGE_ORDER.length-1) ? BATCH_STAGE_ORDER[idx+1] : null;
+}
+const STAGE_CTA={'packaging':{icon:'📦',label:'Move to Packaging'},'completed':{icon:'✓',label:'Mark Completed'}};
+function renderMiniBatchCard(b, flow, urgency){
+  const isCompleted=urgency.key==='completed';
+  const daysLeft=b.completedAt?Math.max(0,7-Math.floor((Date.now()-b.completedAt)/86400000)):7;
+  const lastTs=lastQCTs(b);
+  const dateLabel=isCompleted?`auto-archives in ${daysLeft} day${daysLeft===1?'':'s'}`:(lastTs?`บันทึกล่าสุด ${fmtDayMon(lastTs)}`:'');
+  const next=isCompleted?null:nextBatchStage(b.status);
+  const cta=next?(STAGE_CTA[next]||{icon:'➡️',label:'Advance stage'}):null;
+  const badge=isCompleted?'<span class="badge badge-green">✓ COMPLETED</span>':`<span class="badge badge-blue">✓ QC ครบ${b.status==='packaging'?' — กำลัง Packaging':''}</span>`;
+  return `<div class="qc-batch-card qc-mini" style="opacity:${isCompleted?'.82':'.92'}" onclick="toggleQCCardExpand('${b.id}')">
+      <div class="qc-batch-head" style="border-bottom:none;padding:12px 16px;min-height:80px">
+        <div style="width:38px;height:38px;border-radius:50%;background:${getProductColor(b.product)};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;text-align:center;line-height:1.2;flex-shrink:0;filter:grayscale(.3)">${getProductAbbr(b.product)}</div>
+        <div class="qc-batch-meta">
+          <div class="qc-batch-id" style="display:flex;align-items:center;gap:8px;font-size:14px">${b.batchId} ${badge}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${b.style||b.product} · 🧪 ${b.tank}${dateLabel?' · '+dateLabel:''}</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center" onclick="event.stopPropagation()">
+          ${cta?`<button class="btn btn-primary btn-sm" onclick="quickAdvanceBatch('${b.id}')">${cta.icon} ${cta.label}</button>`:''}
+          <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:4px 6px" onclick="openBatchMenu('${b.id}')">⋮</button>
+          <span style="color:var(--text3);font-size:13px;padding:0 2px">▾</span>
+        </div>
+      </div>
+    </div>`;
+}
+// Shortcut CTA on the mini card — same confirm-then-advance flow as the ⋮
+// menu, just reachable in one tap instead of two since this is the single
+// most common next action once QC is fully recorded.
+function quickAdvanceBatch(id){
+  const b=DB.get('batches',[]).find(x=>x.id===id);
+  if(!b) return;
+  const next=nextBatchStage(b.status);
+  if(!next){ toast('This batch is already completed','✓'); return; }
+  const cta=STAGE_CTA[next]||{icon:'➡️',label:'Advance stage'};
+  askConfirm(`Batch ${id} บันทึก QC ครบแล้ว — เลื่อนสถานะเป็น "${next}" เลยไหม? ระบบจะอัปเดตสถานะออเดอร์ที่ผูกไว้ให้อัตโนมัติ`, ()=>advanceBatchStage(id,next), {icon:cta.icon, title:`เลื่อนสถานะเป็น ${next}?`, confirmLabel:'เลื่อนสถานะ'});
+}
+function toggleQCCardExpand(id){
+  if(qcExpandedSet.has(id)) qcExpandedSet.delete(id); else qcExpandedSet.add(id);
+  renderQC();
+}
+
+function renderBatchCard(b, flow, urgency){
+  flow = flow || computeQCFlow(b);
+  urgency = urgency || qcUrgency(b, flow);
   const statusBadgeMap={
     'in-progress':'<span class="badge badge-blue">IN PROGRESS</span>',
     'pending':'<span class="badge badge-orange">PENDING</span>',
     'completed':'<span class="badge badge-green">COMPLETED</span>',
     'packaging':'<span class="badge badge-purple">PACKAGING</span>',
   };
-  // completed batches collapse to a compact summary row (kept ~1 week, then archived)
-  if(b.status==='completed'){
-    const daysLeft=b.completedAt?Math.max(0,7-Math.floor((Date.now()-b.completedAt)/86400000)):7;
-    return `<div class="qc-batch-card" style="opacity:.9">
-      <div class="qc-batch-head" style="border-bottom:none">
-        <div style="width:40px;height:40px;border-radius:50%;background:${getProductColor(b.product)};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;text-align:center;line-height:1.2;flex-shrink:0;filter:grayscale(.3)">${getProductAbbr(b.product)}</div>
-        <div class="qc-batch-meta">
-          <div class="qc-batch-id" style="display:flex;align-items:center;gap:8px">${b.batchId} <span class="badge badge-green">✓ COMPLETED</span></div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">${b.style||b.product} · 🧪 ${b.tank} · auto-archives in ${daysLeft} day${daysLeft===1?'':'s'}</div>
-        </div>
-        <div style="margin-left:auto;display:flex;gap:6px">
-          <button class="btn btn-outline btn-sm" onclick="viewTemplate('${b.id}')">View</button>
-          <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;padding:4px 8px" onclick="openBatchMenu('${b.id}')">⋮</button>
-        </div>
-      </div>
-    </div>`;
+  // Collapse to the compact row unless the user tapped it open. Batches that
+  // still need QC action (overdue/due/waiting) always render in full — those
+  // are exactly the ones the Action Dashboard is meant to surface.
+  if((urgency.key==='completed'||urgency.key==='ready') && !qcExpandedSet.has(b.id)){
+    return renderMiniBatchCard(b, flow, urgency);
   }
-  const flow=computeQCFlow(b);
-  return `<div class="qc-batch-card" style="position:relative">
+  const isExpandedCollapsible=(urgency.key==='completed'||urgency.key==='ready');
+  // ✅ #2: flag abnormal QC readings on the card itself (red border + banner),
+  // not just a toast at save time that's easy to miss afterward.
+  const hasAbnormal=Object.values(b.qc||{}).some(p=>p&&p.abnormal);
+  const abnormalParams=Object.entries(b.qc||{}).filter(([,p])=>p&&p.abnormal).map(([key])=>{
+    const meta=QC_PARAMS.find(p=>p.key===key);
+    return meta?meta.label:key;
+  });
+  return `<div class="qc-batch-card${hasAbnormal?' abnormal':''}" style="position:relative">
+    ${isExpandedCollapsible?`
+    <div style="background:var(--bg);color:var(--text3);font-size:11px;font-weight:700;padding:8px 14px;display:flex;align-items:center;gap:6px;cursor:pointer;border-bottom:1px solid var(--border)" onclick="toggleQCCardExpand('${b.id}')">
+      <span>▴</span><span>${urgency.key==='completed'?'✓ COMPLETED':'✓ QC ครบแล้ว'} — แตะเพื่อย่อกลับ</span>
+    </div>`:''}
     ${b.incomplete?`
     <div style="background:var(--orange-light);color:#92400E;font-size:11px;font-weight:700;padding:8px 14px;display:flex;align-items:center;gap:6px;cursor:pointer" onclick="openTemplateModal('${b.product}')" title="Click to complete the QC template">
       <span>⚠️</span><span>${b.incompleteReason||'Setup incomplete — QC targets are not set for this batch'}</span>
+    </div>`:''}
+    ${b.timelineIncomplete?`
+    <div style="background:var(--blue-bg);color:var(--blue-text);font-size:11px;font-weight:700;padding:8px 14px;display:flex;align-items:center;gap:6px;cursor:pointer" onclick="goEditTimelineFor('${b.product}')" title="Click to set up this product's production timeline">
+      <span>📅</span><span>${b.timelineIncompleteReason||'ยังไม่ได้ตั้งค่า Timeline เฉพาะสำหรับสินค้านี้ — แตะเพื่อตั้งค่า'}</span>
+    </div>`:''}
+    ${hasAbnormal?`
+    <div style="background:var(--red-bg);color:var(--red-text);font-size:11px;font-weight:700;padding:8px 14px;display:flex;align-items:center;gap:6px">
+      <span>🔴</span><span>ค่าผิดปกติ: ${abnormalParams.join(', ')} — แตะช่องที่ไฮไลท์แดงเพื่อตรวจสอบ/แก้ไข</span>
     </div>`:''}
     <div class="qcx-head">
       <div class="qcx-idblock">
@@ -2618,9 +2942,14 @@ function computeQCFlow(b){
     const d=b.qc?.[p.key]||{};
     if(p.key==='ph' && !d.value) return;
     let state='pending';
-    if(DONE.includes(d.status)) state='done';
+    // ✅ abnormal-value flag (#2 follow-up): saveQCRecord() stores both
+    // status:'over' and a dedicated abnormal:true boolean for out-of-range
+    // readings, but this used to check status==='out-of-range' — a string
+    // that's never actually written — so abnormal values silently rendered
+    // as a normal green "done" checkmark. Check the boolean directly instead.
+    if(d.abnormal) state='over';
+    else if(DONE.includes(d.status)) state='done';
     else if(d.status==='in-progress'||d.active) state='current';
-    else if(d.status==='out-of-range') state='over';
     else if(d.value) state='done';
     const isTemp=d.unit==='°C';
     const short=p.key==='fg'?'FG':(p.key==='ph'?'pH':(p.label.split(' ')[0]));
@@ -2676,11 +3005,38 @@ function computeQCFlow(b){
     next={text:'Ready to Package', kind:'go', icon:'📦'};
   }
 
-  return {day,stage,progress,next,steps};
+  return {day,stage,progress,next,steps,current,anyMeasured};
+}
+
+// ✅ #12: categorizes a batch for the QC Action Dashboard sort order —
+// Overdue (red, top priority) → Due Today → Waiting → Ready to Package →
+// Completed (bottom, collapsed). "Overdue"/"Due Today" come from comparing
+// REAL calendar days elapsed since brewDate (as of right now) against the
+// current checkpoint's expected day window in QC_PARAMS (see note there on
+// precision). This deliberately does NOT reuse flow.day — that field anchors
+// to the latest *recorded* QC timestamp (by design, so historical/seed data
+// renders sensibly) rather than to today, which means a checkpoint nobody
+// has gotten around to measuring yet would never advance flow.day and could
+// never look overdue. Urgency needs the opposite: it must advance whether or
+// not anyone has measured anything. rank is the sort key (lower = first).
+function qcUrgency(b, flow){
+  if(b.status==='completed') return {key:'completed', rank:5, label:'Completed'};
+  if(!flow || !flow.anyMeasured) return {key:'waiting', rank:3, label:'Waiting'};
+  if(!flow.current) return {key:'ready', rank:4, label:'Ready to Package'};
+  const meta=QC_PARAMS.find(p=>p.key===flow.current.key)||{};
+  const realDay=b.brewDate ? Math.max(0,Math.floor((Date.now()-new Date(b.brewDate).getTime())/86400000)) : flow.day;
+  if(meta.dayTo!=null && realDay>meta.dayTo) return {key:'overdue', rank:1, label:'Overdue'};
+  if(meta.dayFrom!=null && realDay<meta.dayFrom) return {key:'waiting', rank:3, label:'Waiting'};
+  return {key:'due', rank:2, label:'Due Today'};
+}
+function lastQCTs(b){
+  let latest='';
+  Object.values(b.qc||{}).forEach(d=>{ if(d && d.ts && d.ts>latest) latest=d.ts; });
+  return latest;
 }
 
 function qcxCard(b,s){
-  const cls=s.state==='current'?'current':(s.state==='pending'?'pending':'');
+  const cls=s.state==='current'?'current':(s.state==='pending'?'pending':(s.state==='over'?'over':''));
   let valHtml, subHtml='', icoHtml='';
   if(s.state==='pending'){
     valHtml=`<div class="qcx-val muted">${s.short}</div>`;
@@ -2871,6 +3227,7 @@ async function saveBatch(){
   const prods=DB.get('products',[]);
   const p=prods.find(x=>x.id===product)||{};
   const batchId=document.getElementById('f-batch-id').value||('BWF'+Date.now().toString().slice(-4));
+  const hasTimeline=hasCustomTimeline(product);
   const batch={
     id:batchId,batchId,orderId:null,product,style:p.style||p.name,status:'in-progress',
     brewDate:document.getElementById('f-batch-brew-date').value,
@@ -2886,6 +3243,8 @@ async function saveBatch(){
     note:hasTemplate?(tmpl.notes||''):'',
     incomplete:!hasTemplate,
     incompleteReason:hasTemplate?'':`No QC template found for "${product}" — go to QC Monitoring → Templates to set target ranges for this batch.`,
+    timelineIncomplete:!hasTimeline,
+    timelineIncompleteReason:hasTimeline?'':`ยังไม่เคยตั้งค่า Production Timeline เฉพาะสำหรับ "${p.name||product}" — ตอนนี้ auto-generate ตารางงานจาก Default ไปก่อน`,
   };
   const batches=DB.get('batches',[]);
   batches.unshift(batch);
@@ -2908,6 +3267,8 @@ async function saveBatch(){
   if(document.getElementById('task-board')) schRenderTasks();
   if(!hasTemplate){
     toast(`⚠️ Batch ${batchId} created but needs a QC template for "${product}" — see QC Monitoring`,'⚠️');
+  } else if(!hasTimeline){
+    toast(`📅 Batch ${batchId} ใช้ Timeline เริ่มต้น (Default) — แตะการ์ดใน QC Monitoring เพื่อตั้งค่าเฉพาะสินค้านี้`,'📅');
   } else {
     toast(`Batch ${batchId} created`,'✓');
   }
@@ -3153,6 +3514,15 @@ function renderBrewerySettings(s){
       <div class="form-group"><label class="form-label">Address</label><textarea class="form-input" rows="2" id="s-address">${s.address||''}</textarea></div>
     </div>
     <div class="card card-pad" style="margin-bottom:16px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px" data-i18n="settings.language_label">${t('settings.language_label')}</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px" data-i18n="settings.language_hint">${t('settings.language_hint')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ${getLang()==='th'?'btn-primary':'btn-outline'}" onclick="setLang('th');renderSettings()">ไทย</button>
+        <button class="btn ${getLang()==='en'?'btn-primary':'btn-outline'}" onclick="setLang('en');renderSettings()">English</button>
+        <button class="btn ${getLang()==='zh'?'btn-primary':'btn-outline'}" onclick="setLang('zh');renderSettings()">中文</button>
+      </div>
+    </div>
+    <div class="card card-pad" style="margin-bottom:16px">
       <div style="font-size:14px;font-weight:700;margin-bottom:16px">Unit Preferences</div>
       <div class="form-row-3">
         <div class="form-group"><label class="form-label">Volume Unit</label><select class="form-input" id="s-vol"><option>Liter (L)</option><option>mL</option></select></div>
@@ -3219,7 +3589,15 @@ function renderQCTemplatesSettings(){
 function renderBatchSettings(s){
   const recipe=window.tlEditRecipe||timelineRecipes()[0];
   const stages=getTimeline(recipe);
-  const recipeOpts=timelineRecipes().map(r=>`<option value="${r}" ${r===recipe?'selected':''}>${r}</option>`).join('');
+  // ✅ #9/#11: option value is the real product id (what getTimeline/genTasks
+  // actually key off of); label is the friendly product name so two
+  // differently-named products of the same style are easy to tell apart.
+  const recipeOpts=timelineRecipes().map(r=>{
+    const prod=DB.get('products',[]).find(p=>p.id===r);
+    const label=prod?`${prod.name}${prod.style?' ('+prod.style+')':''}`:r;
+    return `<option value="${r}" ${r===recipe?'selected':''}>${label}</option>`;
+  }).join('');
+  const recipeLabel=(()=>{ const prod=DB.get('products',[]).find(p=>p.id===recipe); return prod?prod.name:recipe; })();
   const stageRows=stages.map((st,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
       <span style="width:24px;height:24px;border-radius:50%;background:var(--orange-light);color:var(--orange-dark);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
@@ -3247,10 +3625,11 @@ function renderBatchSettings(s){
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px">
         <div>
           <div style="font-size:14px;font-weight:700">Production Timeline Template</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px;max-width:440px">Editable per recipe. When you create a batch and pick a recipe, the Schedule auto-generates these stages from the brew date. Each batch can still be adjusted individually afterward.</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px;max-width:440px">Editable per product. When an order creates a batch for this product, the Schedule auto-generates these stages from the brew date. Each batch can still be adjusted individually afterward.</div>
+          ${!hasCustomTimeline(recipe)?`<div style="font-size:11.5px;color:var(--orange-dark);background:var(--orange-light);border-radius:var(--radius-xs);padding:6px 10px;margin-top:8px;display:inline-block">⚠️ ยังไม่เคยตั้งค่าเฉพาะสินค้านี้ — ตอนนี้ใช้ตารางเริ่มต้น (Default) อยู่ กด "Save Timeline" เพื่อบันทึกเป็นของสินค้านี้โดยเฉพาะ</div>`:''}
         </div>
-        <div class="form-group" style="margin:0;min-width:160px">
-          <label class="form-label">Recipe</label>
+        <div class="form-group" style="margin:0;min-width:200px">
+          <label class="form-label">Product</label>
           <select class="form-input" id="tl-recipe" onchange="changeTimelineRecipe(this.value)">${recipeOpts}</select>
         </div>
       </div>
@@ -3260,7 +3639,7 @@ function renderBatchSettings(s){
       <div id="tl-stages">${stageRows}</div>
       <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="addTimelineStage()">＋ Add Stage</button>
       <div style="display:flex;gap:10px;margin-top:18px">
-        <button class="btn btn-primary" onclick="saveTimelineTemplate()">💾 Save Timeline for ${recipe}</button>
+        <button class="btn btn-primary" onclick="saveTimelineTemplate()">💾 Save Timeline for ${recipeLabel}</button>
         <button class="btn btn-outline" onclick="resetTimelineTemplate()">↺ Reset to Default</button>
       </div>
     </div>
@@ -3315,7 +3694,9 @@ function saveTimelineTemplate(){
   if(!stages.length){ toast('Add at least one stage','⚠️'); return; }
   const all=DB.get('timelineTemplates',{}); all[recipe]=stages; DB.set('timelineTemplates',all);
   regenerateSchedule();
-  toast(`Timeline saved for ${recipe}`,'✓');
+  const prod=DB.get('products',[]).find(p=>p.id===recipe);
+  toast(`บันทึก Timeline สำหรับ ${prod?prod.name:recipe} แล้ว — งานในตารางอัปเดตให้อัตโนมัติ`,'✓');
+  document.getElementById('settings-content').innerHTML=renderBatchSettings(DB.get('settings',{}));
 }
 function resetTimelineTemplate(){
   const recipe=window.tlEditRecipe||timelineRecipes()[0];
@@ -3458,7 +3839,20 @@ function renderSystemSettings(s){
         <button class="btn btn-outline btn-sm" onclick="toggleAppsScriptGuide()">📄 ดูโค้ด Apps Script</button>
       </div>
       <div style="font-size:11.5px;color:var(--text3);margin-top:10px;line-height:1.6">
-        💡 <b>"ส่งลิ้งให้คนอื่นใช้ยังไง":</b> ลิ้งเปล่า (bwfoperation.github.io) จะเปิดเป็นโหมด Demo แยกของแต่ละคนเท่านั้น — กด <b>"Copy Shareable Link"</b> ด้านบนแล้วส่งลิ้งนั้นแทน ผู้รับจะเชื่อมต่อ Google Sheet เดียวกับคุณอัตโนมัติทันทีที่เปิด ไม่ต้องตั้งค่าเอง (ส่วน "Users" ด้านล่างเป็นแค่รายชื่อสำหรับ assign งาน ไม่ใช่ระบบ login/สิทธิ์การเข้าถึง — ทุกคนที่มีลิ้งที่เชื่อมชีตเดียวกันแก้ไขข้อมูลได้เท่ากันหมด)
+        💡 <b>"ส่งลิ้งให้คนอื่นใช้ยังไง":</b> ลิ้งเปล่า (bwfoperation.github.io) จะเปิดเป็นโหมด Demo แยกของแต่ละคนเท่านั้น — กด <b>"Copy Shareable Link"</b> ด้านบนแล้วส่งลิ้งนั้นแทน ผู้รับจะเชื่อมต่อ Google Sheet เดียวกับคุณอัตโนมัติทันทีที่เปิด ไม่ต้องตั้งค่าเอง (ส่วน "Users" ด้านล่างเป็นแค่รายชื่อสำหรับ assign งาน ไม่ใช่ระบบ login — ถ้าต้องการให้ต้องผ่านการอนุญาตจากแอดมินก่อนใช้งานได้ ให้ตั้ง "Team Access PIN" ด้านล่าง)
+      </div>
+      <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="font-size:13px;font-weight:700">🔒 Team Access PIN</div>
+          <span class="badge ${(DB.get('team_pin',[])[0]&&DB.get('team_pin',[])[0].pin)?'badge-green':'badge-gray'}">${(DB.get('team_pin',[])[0]&&DB.get('team_pin',[])[0].pin)?'● เปิดใช้งาน':'○ ยังไม่ได้ตั้ง'}</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--text3);margin-bottom:10px;line-height:1.6">ถ้าตั้งรหัสไว้ ทุกคนที่เปิดลิ้งที่แชร์มา ต้องใส่รหัสนี้ก่อนถึงจะใช้งานแอปได้ — <b>แนะนำให้บอกรหัสแยกจากลิ้ง</b> (เช่น บอกทางแชทหรือโทรบอก) รหัสจะไม่ถูกฝังไปในลิ้งที่คัดลอก</div>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+          <div class="form-group" style="margin:0">
+            <input class="form-input" type="text" id="team-pin-input" placeholder="เช่น 4821" inputmode="numeric" style="max-width:160px;letter-spacing:.2em" value="${(DB.get('team_pin',[])[0]&&DB.get('team_pin',[])[0].pin)||''}">
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="saveTeamPin()">💾 บันทึก PIN</button>
+        </div>
       </div>
       `:`
       <div style="font-size:12.5px;color:var(--text2);line-height:1.7;margin-bottom:14px;background:var(--bg);border-radius:var(--radius-sm);padding:12px 14px">
@@ -3585,6 +3979,58 @@ async function copyShareableLink(){
     askInput('คัดลอกลิ้งด้านล่างแล้วส่งให้ทีม:', link, ()=>{});
   }
 }
+
+// ✅ #10: Team Access PIN — the shareable link above already solves "no
+// manual re-connect needed" (anyone who opens it auto-connects to the same
+// Sheet, see _bootstrapGSConfigFromURL). This adds the other half of what
+// was asked: "...และได้รับการอนุญาตจากแอดมิน" (...and has been given
+// permission by the admin). Since this app has no server-side login system
+// (it's a static page + Apps Script), a full per-person account system would
+// need real backend auth. This is the lightweight version: the admin sets a
+// shared PIN once (synced via the same Google Sheet as everything else, so
+// every device checks the same value); anyone who opens the link is asked
+// for that PIN before they can use the app, and the admin tells the PIN to
+// people separately (chat, phone, in person) rather than it riding along
+// inside the link itself. Leaving the PIN blank/unset (the default for every
+// existing user, including Tony's current setup) disables the gate entirely
+// — zero behavior change unless this is turned on.
+function checkTeamPinGate(){
+  if(CONFIG.USE_LOCAL) return; // no shared sheet = nothing to gate
+  const rows=DB.get('team_pin',[]);
+  const required=rows && rows[0] && rows[0].pin;
+  if(!required) return;
+  const verifiedKey='bwf_pin_verified_'+CONFIG.SHEET_ID;
+  if(localStorage.getItem(verifiedKey)===required) return; // this device already verified this exact PIN
+  const overlay=document.getElementById('modal-pin-gate');
+  if(!overlay) return;
+  overlay.style.display='flex';
+  const field=document.getElementById('pin-gate-field');
+  const errEl=document.getElementById('pin-gate-error');
+  const btn=document.getElementById('pin-gate-btn');
+  field.value=''; errEl.style.display='none';
+  setTimeout(()=>field.focus(),50);
+  function submit(){
+    if((field.value||'').trim()===required){
+      localStorage.setItem(verifiedKey, required);
+      overlay.style.display='none';
+    } else {
+      errEl.style.display='block';
+      field.value=''; field.focus();
+    }
+  }
+  btn.onclick=submit;
+  field.onkeydown=function(e){ if(e.key==='Enter') submit(); };
+}
+async function saveTeamPin(){
+  const val=(document.getElementById('team-pin-input').value||'').trim();
+  if(val && !/^\d{4,8}$/.test(val)){ toast('รหัส PIN ต้องเป็นตัวเลข 4-8 หลัก','⚠️'); return; }
+  DB.set('team_pin', val ? [{pin:val, updatedAt:new Date().toISOString()}] : []);
+  // the admin's own device that just set this PIN shouldn't be locked out by it
+  if(val) localStorage.setItem('bwf_pin_verified_'+CONFIG.SHEET_ID, val);
+  toast(val?'ตั้งรหัส Team PIN แล้ว — แจ้งรหัสนี้กับทีมแยกต่างหาก (ไม่ต้องแปะไว้ในลิ้ง)':'ปิดการใช้ Team PIN แล้ว','✓');
+  renderSettings();
+}
+
 // fetch() has no built-in timeout — on a flaky mobile connection a single hung
 // request used to stall the whole sequential pull/push loop (and, because the
 // stylesheet above was also blocking, made Safari's tab spinner look stuck
@@ -3941,9 +4387,7 @@ function openBatchMenu(id){
   const batches=DB.get('batches',[]);
   const b=batches.find(x=>x.id===id);
   if(!b) return;
-  const order=['pending','in-progress','packaging','completed'];
-  const idx=order.indexOf(b.status);
-  const next=(idx>=0 && idx<order.length-1) ? order[idx+1] : null;
+  const next=nextBatchStage(b.status);
   if(!next){ toast('This batch is already completed','✓'); return; }
   askConfirm(`Advance batch ${id} from "${b.status}" to "${next}"? This updates the linked order status and dashboard automatically.`, ()=>advanceBatchStage(id,next), {icon:'➡️', title:'Advance batch stage?', confirmLabel:'Advance stage'});
 }
@@ -4069,6 +4513,14 @@ function respond(data) {
 const TODAY = new Date();
 const TOD = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-${String(TODAY.getDate()).padStart(2,'0')}`;
 
+// ✅ #9/#11: PROD used to be the only source of a task's color/abbr/style,
+// keyed by ['IPA','Sour','Stout','Pale Ale','Wheat'] — names that don't
+// match real product IDs (seed products are 'IPA','SOUR','STOUT','PALE',
+// 'WHEAT', and any product added via Settings gets its own generated id).
+// Kept here as a last-resort fallback only; prodMeta() below checks the
+// REAL products list first so this mismatch can't silently misroute
+// anything — each product (even two different "IPA" recipes with different
+// ids) gets its own correct color/abbr/style from its own record.
 const PROD = {
   'IPA':{color:'#2E7D32',abbr:'IPA\nIndia\nPale Ale',style:'IPA – India Pale Ale'},
   'Sour':{color:'#E6A817',abbr:'SOUR\nPassion\nFruit',style:'Sour – Passion Fruit'},
@@ -4076,6 +4528,22 @@ const PROD = {
   'Pale Ale':{color:'#A0C840',abbr:'PALE\nALE',style:'Pale Ale – American'},
   'Wheat':{color:'#8B6914',abbr:'WHEAT',style:'Wheat Beer'},
 };
+function prodMeta(productId){
+  const p=DB.get('products',[]).find(x=>x.id===productId);
+  if(p) return {color:p.color||'#888',abbr:p.abbr||p.name||productId,style:p.style||p.name||productId};
+  return PROD[productId]||{color:'#888',abbr:productId,style:productId};
+}
+// Fills a <select> with the real product list (id=value, name=label),
+// preserving whatever was already selected. Used everywhere a product
+// picker used to be a hardcoded, easily-stale option list.
+function populateProductSelect(selectEl, allLabel){
+  if(!selectEl) return;
+  const prev=selectEl.value;
+  const prods=DB.get('products',[]);
+  selectEl.innerHTML=(allLabel!=null?`<option value="">${allLabel}</option>`:'<option value="">Select</option>')
+    + prods.map(p=>`<option value="${p.id}">${p.name||p.id}</option>`).join('');
+  if(prev && [...selectEl.options].some(o=>o.value===prev)) selectEl.value=prev;
+}
 
 const TASK_ICONS = {
   'Measure SG':'⚗️','Measure OG':'🔭','Measure pH':'🧫',
@@ -4108,13 +4576,47 @@ function defaultTimeline(){
     {name:'Released',         day:18, type:'Other'},
   ];
 }
-function timelineRecipes(){ return ['IPA','Sour','Stout','Pale Ale','Wheat']; }
+// ✅ #9/#11: this used to be a hardcoded ['IPA','Sour','Stout','Pale Ale',
+// 'Wheat'] list, disconnected from the real products list — 3 of the 5
+// don't even match the actual seed product IDs ('SOUR' vs 'Sour', 'STOUT'
+// vs 'Stout', 'PALE' vs 'Pale Ale'), and any product added via Settings
+// never appeared here at all. That meant: (a) editing a "recipe" timeline
+// in Settings → Batch Settings silently saved under a key no real batch
+// ever reads, so the edit had zero effect on actual schedules, and (b) two
+// different real products (e.g. two separate IPA recipes with different
+// product ids) could never get independent timelines. Now keyed by real
+// product id, one-to-one — including for products that share a style/name.
+function timelineRecipes(){
+  const prods=DB.get('products',[]);
+  return prods.length ? prods.map(p=>p.id) : ['IPA','Sour','Stout','Pale Ale','Wheat'];
+}
+// One-time, idempotent backfill: copy any timeline saved under the old
+// mismatched names to the real product-id key, if that product doesn't
+// already have its own template — so a customization made before this fix
+// isn't silently lost. Safe to call on every boot (no-ops once migrated).
+function migrateTimelineTemplateKeys(){
+  const legacyMap={'Sour':'SOUR','Stout':'STOUT','Pale Ale':'PALE','Wheat':'WHEAT'};
+  const t=DB.get('timelineTemplates',{});
+  let changed=false;
+  Object.entries(legacyMap).forEach(([oldKey,newKey])=>{
+    if(t[oldKey] && !t[newKey]){ t[newKey]=t[oldKey]; changed=true; }
+  });
+  if(changed) DB.set('timelineTemplates',t);
+}
 function initTimelines(){
   if(!DB.get('timelineTemplates')){
     const obj={};
     timelineRecipes().forEach(p=>obj[p]=defaultTimeline());
     DB.set('timelineTemplates',obj);
   }
+  migrateTimelineTemplateKeys();
+}
+// Whether this product has its own customized timeline vs. is silently
+// falling back to the generic 9-stage default (used for the #9 "review
+// your schedule" nudge in createBatchFromOrder below).
+function hasCustomTimeline(productId){
+  const t=DB.get('timelineTemplates',{});
+  return !!(t[productId] && t[productId].length);
 }
 function getTimeline(product){
   const t=DB.get('timelineTemplates',{});
@@ -4249,6 +4751,11 @@ function updateCounts(){
 }
 
 function schRenderTasks(){
+  // ✅ #9: was a static <option> list hardcoded to ['IPA','Sour','Stout',
+  // 'Pale Ale'] — names that don't match real product IDs, so picking most
+  // of them filtered to zero tasks ("tasks don't show up"). Now sourced
+  // live from the real product list every render.
+  populateProductSelect(document.getElementById('f-product'), 'Product: All');
   updateCounts();
   const tasks=getFiltered();
   const board=document.getElementById('task-board');
@@ -4281,7 +4788,7 @@ function schRenderTasks(){
 }
 
 function taskCard(t){
-  const p=PROD[t.product]||{color:'#888',abbr:t.product,style:t.style};
+  const p=prodMeta(t.product);
   const urgCls={now:'sn',soon:'ss',later:'sl',overdue:'so'};
   const urgLabel={now:'NOW',soon:'SOON',later:'LATER',overdue:'OVERDUE'};
   const isSelected=selectedTask===t.id;
@@ -4347,7 +4854,7 @@ function selectTask(id){
 }
 
 function detailPanel(t){
-  const p=PROD[t.product]||{color:'#888'};
+  const p=prodMeta(t.product);
   const steps=[
     {label:'Brew',icon:'🍺',sub:'Completed',status:'done'},
     {label:'Ferment',icon:'🧪',sub:'In Progress',status:'active-step'},
@@ -4581,7 +5088,7 @@ function renderUpcoming(){
   const upcoming=ALL_TASKS.filter(t=>!t.done&&t.date>TOD).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time)).slice(0,5);
   const bgColors={IPA:'#E8F5E9',Sour:'#FFF8E7',Stout:'#F5F5F5',Pale:'#F0F7E0',Wheat:'#FFF3E0'};
   document.getElementById('upcoming-list').innerHTML=upcoming.map(t=>{
-    const p=PROD[t.product]||{color:'#888'};
+    const p=prodMeta(t.product);
     const fd=`${t.date.slice(8,10)}/${t.date.slice(5,7)}`;
     return `<div class="up-row" onclick="selectTask('${t.id}')">
       <div class="up-icon" style="background:${p.color}20">${taskIcon(t.name)}</div>
@@ -4620,7 +5127,7 @@ function schSaveTask(){
     id:'MAN-'+Date.now(),
     batchId:document.getElementById('f-tbatch').value||'—',
     product:document.getElementById('f-tproduct').value,
-    style:PROD[document.getElementById('f-tproduct').value]?.style||'—',
+    style:prodMeta(document.getElementById('f-tproduct').value).style||'—',
     tank:document.getElementById('f-ttank').value,
     brewDate:TOD,
     name,type:document.getElementById('f-ttype').value,
@@ -4673,6 +5180,10 @@ function schOpenAdd(){
   const tm=document.getElementById('f-ttime');
   if(tm) tm.value='09:00';
   ['f-tname','f-tbatch','f-tassign','f-ttank','f-tnote'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  // ✅ #9: same hardcoded-vs-real-product mismatch as the schedule filter —
+  // populate from the real product list so a manually added task can
+  // actually be tagged with any real product, not just 4 fixed names.
+  populateProductSelect(document.getElementById('f-tproduct'));
   document.getElementById('modal-add-task').style.display='flex';
 }
 function schToggleCal(){
@@ -4693,10 +5204,19 @@ seed();
 // unrelated action happened to call refreshAllTasks(). Rebuild it now that
 // real batch data (seeded or previously saved) is actually in place.
 refreshAllTasks();
-if(!CONFIG.USE_LOCAL){ gsheetsPullAll(); }
-renderDashboard();
+if(!CONFIG.USE_LOCAL){ gsheetsPullAll().then(checkTeamPinGate); }
+// ✅ #6: was a bare renderDashboard() — which only fills in #dash-stats etc.
+// and trusts the static HTML's class="page active" to already be correct.
+// On a real refresh (Safari especially) that trust wasn't always warranted
+// — the fix Tony found by hand (open the ☰ menu, tap Dashboard) works
+// because navigate() *forcibly* re-applies page-title, the sidebar's
+// active nav-item, and #page-dashboard's "active" class instead of assuming
+// they're already right. Doing that explicitly on every boot means nobody
+// has to do it by hand again.
+navigate('dashboard', document.getElementById('nav-dashboard'));
 if(document.getElementById('task-board')) schRenderTasks();
 applyBranding();
+applyI18N(); // ✅ #1: apply the saved language preference (nav, page title, confirm-dialog chrome)
 // Set schedule date
 const schedDate=document.getElementById('schedule-date');
 if(schedDate) schedDate.textContent='Today · '+formatDateLong(todayStr());
@@ -4762,7 +5282,16 @@ setInterval(()=>{
 #tour-card .t-btn{flex:1;padding:9px 12px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer}
 #tour-card .t-btn.back{background:#F3F4F6;color:#374151;flex:0 0 auto;padding:9px 16px}
 #tour-card .t-btn.next{background:var(--orange,#F5A300);color:#fff}
-#tour-fab{position:fixed;bottom:22px;right:22px;width:50px;height:50px;border-radius:50%;background:var(--orange,#F5A300);color:#fff;border:none;box-shadow:0 4px 14px rgba(245,163,0,.4);cursor:pointer;z-index:4000;display:none;align-items:center;justify-content:center;padding:0}
+/* ✅ #5: was z-index:4000 — HIGHER than every modal (modal-overlay:500,
+   modal-confirm/input:900) — so this floating "?" button's bottom-right
+   corner sat on top of the modal's Save/Cancel buttons underneath it.
+   Taps landing in that corner hit the (visually hidden, since the modal's
+   own backdrop covered it) fab instead of Save, which is exactly why it
+   felt like "have to aim precisely, keeps bouncing" and looked like it was
+   overlapping the guide button — it was. Now it sits below every modal's
+   z-index, so any open modal's full-screen backdrop naturally covers and
+   blocks it, with no per-modal JS bookkeeping needed. */
+#tour-fab{position:fixed;bottom:22px;right:22px;width:50px;height:50px;border-radius:50%;background:var(--orange,#F5A300);color:#fff;border:none;box-shadow:0 4px 14px rgba(245,163,0,.4);cursor:pointer;z-index:250;display:none;align-items:center;justify-content:center;padding:0}
 #tour-fab svg{width:24px;height:24px;display:block}
 </style>
 <div id="tour-overlay">
@@ -4859,10 +5388,33 @@ function tourRender(){
   requestAnimationFrame(()=>{
     const el=document.querySelector(step.sel);
     if(!el){ tourNext(); return; }
-    const r=el.getBoundingClientRect();
-    const targetY=window.scrollY+r.top-120;
-    window.scrollTo({top:Math.max(0,targetY),behavior:'smooth'});
-    setTimeout(()=>tourPositionFor(el.getBoundingClientRect()),260);
+    // Some targets (e.g. the sync indicator dot) are hidden with
+    // display:none on very narrow phones — a 0×0 rect there would draw a
+    // stray point-sized spotlight in the top-left corner, so treat that the
+    // same as "not found" and skip to the next step instead.
+    const preRect=el.getBoundingClientRect();
+    if(preRect.width===0 && preRect.height===0){ tourNext(); return; }
+    // On mobile the sidebar (and its nav items / logo) sits off-canvas via
+    // transform:translateX(-100%) until the hamburger opens it. If this
+    // step's target lives inside the sidebar, open it first so it's
+    // actually on-screen to highlight; otherwise make sure it's closed so
+    // it doesn't cover the main-content step that follows.
+    const sidebarEl=document.getElementById('sidebar');
+    const targetInSidebar=!!(sidebarEl && sidebarEl.contains(el));
+    const sidebarWasClosed=sidebarEl && !sidebarEl.classList.contains('open');
+    if(targetInSidebar && sidebarWasClosed){
+      sidebarEl.classList.add('open');
+      document.getElementById('sidebar-overlay')?.classList.add('open');
+    } else if(!targetInSidebar && sidebarEl && sidebarEl.classList.contains('open')){
+      closeSidebar();
+    }
+    const settleDelay=(targetInSidebar && sidebarWasClosed)?320:260;
+    setTimeout(()=>{
+      const r=el.getBoundingClientRect();
+      const targetY=window.scrollY+r.top-120;
+      window.scrollTo({top:Math.max(0,targetY),behavior:'smooth'});
+      setTimeout(()=>tourPositionFor(el.getBoundingClientRect()),targetInSidebar&&sidebarWasClosed?60:0);
+    },targetInSidebar&&sidebarWasClosed?settleDelay:0);
   });
 }
 
@@ -4886,6 +5438,7 @@ function tourBack(){
 }
 function tourSkip(){ tourAskPreference(); }
 function tourAskPreference(){
+  closeSidebar(); // in case the last step left the mobile sidebar drawer open
   const spot=document.getElementById('tour-spot');
   spot.style.width='0px'; spot.style.height='0px';
   spot.style.top='50%'; spot.style.left='50%';
