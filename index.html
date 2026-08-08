@@ -805,7 +805,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
        label lets anyone confirm at a glance which build they're on, without
        needing to check the filename or ask. Bump the version string on
        every delivered file. -->
-  <div style="padding:6px 20px 12px;font-size:9.5px;color:var(--text3);letter-spacing:.02em">Build 2026-08-08.6</div>
+  <div style="padding:6px 20px 12px;font-size:9.5px;color:var(--text3);letter-spacing:.02em">Build 2026-08-08.7</div>
 </aside>
 
 <!-- MAIN -->
@@ -976,7 +976,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       <div class="filter-bar">
         <div class="search-w" style="position:relative;flex:1;min-width:200px">
           <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text3)" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
-          <input type="search" placeholder="Search tasks, batch ID or product..." id="task-search" oninput="schRenderTasks()" style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid var(--bd2);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text)">
+          <input type="search" inputmode="numeric" placeholder="Search tasks, batch ID or product..." id="task-search" oninput="schRenderTasks()" style="width:100%;padding:9px 12px 9px 34px;border:1.5px solid var(--bd2);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text)">
         </div>
         <select class="fsel" id="f-product" onchange="schRenderTasks()" style="padding:7px 22px 7px 10px;border:1.5px solid var(--bd2);border-radius:var(--radius-sm);font-size:12px;font-weight:600;background:var(--surface);color:var(--text)"><option value="">Product: All</option><option value="IPA">IPA</option><option value="Sour">Sour</option><option value="Stout">Stout</option><option value="Pale Ale">Pale Ale</option></select>
         <select class="fsel" id="f-type" onchange="schRenderTasks()" style="padding:7px 22px 7px 10px;border:1.5px solid var(--bd2);border-radius:var(--radius-sm);font-size:12px;font-weight:600;background:var(--surface);color:var(--text)"><option value="">Task Type: All</option><option value="SG">SG Check</option><option value="pH">pH Check</option><option value="Dry Hop">Dry Hop</option><option value="Cold Crash">Cold Crash</option><option value="Transfer">Transfer</option><option value="Packaging">Packaging</option></select>
