@@ -798,6 +798,14 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       <div class="user-role" id="sidebar-role">Admin</div>
     </div>
   </div>
+  <!-- ✅ Build stamp — Tony has repeatedly ended up testing an older
+       downloaded copy while multiple similarly-named files pile up in
+       Downloads, which looks exactly like a fresh bug ("still doesn't
+       work") when it's really just stale content. This tiny always-visible
+       label lets anyone confirm at a glance which build they're on, without
+       needing to check the filename or ask. Bump the version string on
+       every delivered file. -->
+  <div style="padding:6px 20px 12px;font-size:9.5px;color:var(--text3);letter-spacing:.02em">Build 2026-08-08.6</div>
 </aside>
 
 <!-- MAIN -->
@@ -1075,7 +1083,10 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
           <label class="form-label">ผู้รับ Order (Recipient)</label>
           <input class="form-input" id="f-order-recipient" placeholder="ชื่อผู้รับ / ผู้ติดต่อสำหรับส่งของ">
         </div>
-        <div class="form-group"></div>
+        <div class="form-group">
+          <label class="form-label">วันที่สั่งออเดอร์ (Order Date)</label>
+          <input class="form-input" type="date" id="f-order-date">
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -1228,7 +1239,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
   <div class="modal">
     <div class="modal-head">
       <div class="modal-title" id="product-modal-title">Add Product</div>
-      <button class="modal-close" onclick="closeModal('modal-product')">✕</button>
+      <button class="modal-close" onclick="closeProductModal()">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="product-edit-id">
@@ -1273,7 +1284,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-outline" onclick="closeModal('modal-product')">Cancel</button>
+      <button class="btn btn-outline" onclick="closeProductModal()">Cancel</button>
       <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
     </div>
   </div>
@@ -1325,7 +1336,10 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       <input type="hidden" id="qc-record-param">
       <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px">
         <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Target Range</div>
-        <div style="font-size:16px;font-weight:700;color:var(--text);margin-top:4px" id="qc-record-target">—</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px" id="qc-record-target-view">
+          <div style="font-size:16px;font-weight:700;color:var(--text)" id="qc-record-target">—</div>
+          <span onclick="editQCTargetInModal()" style="cursor:pointer;opacity:.65;font-size:13px" title="แก้ค่าเป้าหมาย">✎</span>
+        </div>
       </div>
       <div id="qc-record-nexthint" style="display:none;gap:8px;align-items:flex-start;background:var(--orange-light);border-radius:var(--radius-xs);padding:10px 12px;margin:-6px 0 16px;font-size:12px;color:#92400E;line-height:1.5">
         <span style="flex-shrink:0">💡</span>
@@ -1474,8 +1488,78 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       <input id="pin-gate-field" class="form-input" style="width:100%;text-align:center;letter-spacing:.3em;font-size:16px" type="password" inputmode="numeric" placeholder="••••">
       <div id="pin-gate-error" style="display:none;color:var(--red-text);font-size:12px;margin-top:8px">รหัส PIN ไม่ถูกต้อง ลองอีกครั้ง</div>
     </div>
-    <div style="display:flex;gap:10px;padding:20px 24px 24px">
+    <div style="display:flex;gap:10px;padding:20px 24px 4px">
       <button class="btn btn-primary" style="flex:1" id="pin-gate-btn">ยืนยัน / Verify</button>
+    </div>
+    <div style="text-align:center;padding:2px 24px 18px">
+      <button class="t-skip" style="border:none;background:none;color:var(--text3);font-size:12px;font-weight:600;cursor:pointer;padding:6px;text-decoration:underline" id="pin-gate-forgot-btn">ลืมรหัส PIN?</button>
+    </div>
+    <!-- ✅ Schedule-page "can't click anything" bug fix: this gate used to have
+         NO way out if the PIN was wrong/forgotten or the device's verified-flag
+         didn't match (new browser, cleared cache, different device) — it has no
+         cancel button and sits at z-index:950, above every other element
+         including the sidebar, so a locked-out visitor really could click
+         nothing at all, anywhere in the app. This inline (not nested-modal, to
+         dodge the modal-confirm z-index:900 < 950 stacking issue) recovery
+         panel lets anyone stuck here remove the PIN requirement so they're
+         never permanently locked out; a new PIN can be re-set from Settings
+         afterward. This intentionally doesn't add real security beyond "knows
+         the shared link" — that was already true before the PIN feature existed. -->
+    <div id="pin-gate-forgot-panel" style="display:none;padding:0 24px 22px;text-align:center;border-top:1px solid var(--bd2, #eee);margin-top:0">
+      <div style="font-size:11.5px;color:var(--text3);line-height:1.6;padding:14px 0 12px">การรีเซ็ตจะยกเลิกรหัส PIN สำหรับทุกคนที่ใช้ชีตนี้ จนกว่าจะมีการตั้งรหัสใหม่จากหน้าตั้งค่า (Settings → System)</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" style="flex:1" id="pin-gate-forgot-cancel-btn">ยกเลิก</button>
+        <button class="btn btn-danger" style="flex:1" id="pin-gate-forgot-confirm-btn">รีเซ็ตรหัส PIN</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ #14: Batch Setup Wizard — opened automatically right after saving a
+     brand-new order (see saveOrder()). Merges what used to be two separate
+     unconnected steps (QC Template target values in Settings, and Timeline
+     day-offsets in Batch Settings) into one screen per checkpoint, and
+     writes both from the same input so "set a day" really does create a
+     dated task on the Schedule. Skippable — see skipBatchSetupWizard(). -->
+<div class="modal-overlay" id="modal-batch-setup">
+  <div style="background:var(--surface);border-radius:var(--radius);width:100%;max-width:640px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25)">
+    <input type="hidden" id="bsw-batch-id">
+    <div style="padding:22px 24px 4px;flex-shrink:0">
+      <div style="font-size:11.5px;color:var(--text3);margin-bottom:4px" id="bsw-context">—</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px" data-i18n="wizard.title">Set Up QC &amp; Schedule for This Batch</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.6" data-i18n="wizard.subtitle">Enter a target value and day for each checkpoint.</div>
+    </div>
+    <div style="padding:14px 24px;overflow-y:auto;flex:1" id="bsw-cards"></div>
+    <div style="display:flex;gap:10px;padding:18px 24px 22px;flex-shrink:0;border-top:1px solid var(--border)">
+      <button class="btn btn-outline" style="flex:1" onclick="skipBatchSetupWizard()" data-i18n="wizard.skip_btn">Skip for now</button>
+      <button class="btn btn-primary" style="flex:1.4" onclick="saveBatchSetupWizard()" data-i18n="wizard.save_btn">Save &amp; Generate Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Tony: "อยากให้สามารถแก้ไขได้จบในหน้า QC monitor เลย" — editing a
+     product's Production Timeline used to always mean navigating away to
+     Settings → Batch Settings. This modal lets it happen as a popup right
+     on top of whatever page triggered it (the QC Monitoring "needs a
+     timeline" banner, or the post-wizard follow-up prompt) — no page change
+     at all. See openTimelineEditModal() / goEditTimelineFor(). -->
+<div class="modal-overlay" id="modal-timeline-edit">
+  <div class="modal" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-head">
+      <div class="modal-title" id="tlm-title">Production Timeline</div>
+      <button class="modal-close" onclick="closeModal('modal-timeline-edit')">✕</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto">
+      <div id="tlm-warning" style="display:none;font-size:11.5px;color:var(--orange-dark);background:var(--orange-light);border-radius:var(--radius-xs);padding:6px 10px;margin-bottom:12px">⚠️ ยังไม่เคยตั้งค่าเฉพาะสินค้านี้ — ตอนนี้ใช้ตารางเริ่มต้น (Default) อยู่ กด "Save Timeline" เพื่อบันทึกเป็นของสินค้านี้โดยเฉพาะ</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0 4px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">
+        <span style="width:24px"></span><span style="flex:1">Stage</span><span style="width:96px;text-align:center">Day offset</span><span style="width:28px"></span>
+      </div>
+      <div id="tlm-stages"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="addTimelineStage('modal')">＋ Add Stage</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="resetTimelineTemplate('modal')">↺ Reset to Default</button>
+      <button class="btn btn-primary" onclick="saveTimelineTemplate('modal')">💾 Save Timeline</button>
     </div>
   </div>
 </div>
@@ -1842,6 +1926,17 @@ const I18N={
     'confirm.default_title':'ยืนยันหรือไม่?','confirm.default_yes':'ใช่, ดำเนินการต่อ','confirm.cancel':'ยกเลิก',
     'settings.language_label':'ภาษา (Language)',
     'settings.language_hint':'มีผลกับเมนู, กล่องยืนยันการทำงาน และข้อความแจ้งเตือนทั่วทั้งแอป',
+    'order.select_product':'เลือกสินค้า',
+    'order.add_new_product':'เพิ่มสินค้าใหม่...',
+    'wizard.title':'ตั้งค่า QC & กำหนดการสำหรับ Batch นี้',
+    'wizard.subtitle':'ระบุค่าเป้าหมายและจำนวนวัน (นับจากวันบรรจุ) ของแต่ละจุดตรวจ — ระบบจะสร้างงานในตารางงานให้อัตโนมัติตามวันที่ระบุ ค่าที่ตั้งไว้ที่นี่จะถูกจำไว้ใช้กับออเดอร์ถัดไปของสินค้านี้ด้วย',
+    'wizard.target_label':'ค่าเป้าหมาย',
+    'wizard.day_label':'วันที่ (นับจากวันบรรจุ)',
+    'wizard.day_placeholder':'เช่น 3',
+    'wizard.skip_btn':'ข้ามไปก่อน — ตั้งค่าทีหลัง',
+    'wizard.save_btn':'บันทึกและสร้างตารางงาน',
+    'wizard.skip_confirm':'ข้ามการตั้งค่าตอนนี้ได้ — Batch นี้จะใช้ตารางงานเริ่มต้นไปก่อน คุณสามารถกลับมาตั้งค่าเพิ่มเติมได้ทุกเมื่อจากการ์ดของ Batch นี้ในหน้า QC Monitoring',
+    'wizard.saved_toast':'บันทึกค่าเป้าหมาย QC และสร้างงานในตารางงานให้อัตโนมัติแล้ว — ตรวจสอบได้ที่หน้า Schedule',
   },
   en:{
     'nav.dashboard':'Dashboard','nav.orders':'Orders','nav.qc':'QC Monitoring','nav.qc_short':'QC',
@@ -1852,6 +1947,17 @@ const I18N={
     'confirm.default_title':'Are you sure?','confirm.default_yes':'Yes, continue','confirm.cancel':'Cancel',
     'settings.language_label':'Language',
     'settings.language_hint':'Applies to menus, confirmation dialogs, and system messages across the whole app.',
+    'order.select_product':'Select product',
+    'order.add_new_product':'Add new product...',
+    'wizard.title':'Set Up QC & Schedule for This Batch',
+    'wizard.subtitle':'Enter a target value and day (from brew date) for each checkpoint — matching tasks are created on your Schedule automatically. Whatever you set here is remembered for this product\'s future orders too.',
+    'wizard.target_label':'Target value',
+    'wizard.day_label':'Day (from brew date)',
+    'wizard.day_placeholder':'e.g. 3',
+    'wizard.skip_btn':'Skip for now — set up later',
+    'wizard.save_btn':'Save & Generate Schedule',
+    'wizard.skip_confirm':'You can skip this for now — this batch will use the default schedule in the meantime. Come back anytime from this batch\'s card on the QC Monitoring page.',
+    'wizard.saved_toast':'QC targets saved and schedule tasks generated — check the Schedule page.',
   },
   zh:{
     'nav.dashboard':'仪表盘','nav.orders':'订单','nav.qc':'质量监控','nav.qc_short':'QC',
@@ -1862,6 +1968,17 @@ const I18N={
     'confirm.default_title':'确定要这样做吗？','confirm.default_yes':'是，继续','confirm.cancel':'取消',
     'settings.language_label':'语言',
     'settings.language_hint':'适用于整个应用的菜单、确认对话框和系统提示信息。',
+    'order.select_product':'选择产品',
+    'order.add_new_product':'添加新产品...',
+    'wizard.title':'为此批次设置质检与排程',
+    'wizard.subtitle':'为每个检查点输入目标值和天数（从酿造日起算）——系统会根据设定的日期自动在排程中生成任务。此处设置的内容也会保存下来，供该产品的后续订单使用。',
+    'wizard.target_label':'目标值',
+    'wizard.day_label':'天数（从酿造日起算）',
+    'wizard.day_placeholder':'例如 3',
+    'wizard.skip_btn':'暂时跳过 — 稍后再设置',
+    'wizard.save_btn':'保存并生成排程',
+    'wizard.skip_confirm':'您可以先跳过此步骤 — 此批次将暂时使用默认排程。您可以随时从质检监控页面中该批次的卡片返回设置。',
+    'wizard.saved_toast':'质检目标已保存，排程任务已自动生成 — 请在排程页面查看。',
   },
 };
 function getLang(){
@@ -2377,7 +2494,8 @@ function renderOrderDetail(o){
         <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Order Info</div>
         <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
           <span style="color:var(--text3)">Order ID</span><strong>${o.orderId}</strong>
-          <span style="color:var(--text3)">Order Date</span><span>${formatDate(o.brewDate||'2025-06-12')}</span>
+          <span style="color:var(--text3)">วันที่สั่งออเดอร์</span><span>${formatDate(o.orderDate||o.brewDate)}</span>
+          <span style="color:var(--text3)">บันทึกล่าสุด</span><span>${formatDateTime(o.updatedAt)}</span>
           <span style="color:var(--text3)">Customer</span><span>${o.customer||'—'}</span>
           <span style="color:var(--text3)">ผู้รับ Order</span><span>${o.recipient||'—'}</span>
           <span style="color:var(--text3)">Note</span><span style="color:var(--text2)">${o.note||'—'}</span>
@@ -2413,9 +2531,19 @@ function renderOrderDetail(o){
   </div>`;
 }
 
-function openOrderModal(editId=null){
+// ✅ #14: rebuilds the order modal's product <select> from the real product
+// list, preserving whatever was already picked (used both on first open and
+// after returning from the inline "+ Add new product" flow below).
+function populateOrderProductSelect(keepValue){
+  const sel=document.getElementById('f-order-product');
   const prods=DB.get('products',[]);
-  document.getElementById('f-order-product').innerHTML='<option value="">Select product</option>'+prods.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  sel.innerHTML='<option value="">'+t('order.select_product')+'</option>'
+    +prods.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')
+    +`<option value="__add_new__">＋ ${t('order.add_new_product')}</option>`;
+  if(keepValue && [...sel.options].some(o=>o.value===keepValue)) sel.value=keepValue;
+}
+function openOrderModal(editId=null){
+  populateOrderProductSelect();
   document.getElementById('order-edit-id').value=editId||'';
   document.getElementById('order-modal-title').textContent=editId?'Edit Order':'New Order';
   if(!editId){
@@ -2428,6 +2556,10 @@ function openOrderModal(editId=null){
     document.getElementById('f-order-eta').value=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
     document.getElementById('f-order-status').value='pending';
     document.getElementById('f-order-priority').value='medium';
+    // ✅ item-2: "วันที่สั่งออเดอร์" (order-placed date) — separate concept
+    // from ETA (delivery target) and brewDate (production start). Defaults
+    // to today but is editable, since an order can be logged after the fact.
+    document.getElementById('f-order-date').value=todayStr();
   } else {
     const o=DB.get('orders',[]).find(x=>x.id===editId);
     if(!o) return;
@@ -2441,14 +2573,42 @@ function openOrderModal(editId=null){
     document.getElementById('f-order-status').value=o.status;
     document.getElementById('f-order-priority').value=o.priority;
     document.getElementById('f-order-note').value=o.note||'';
+    // fall back to brewDate for orders created before this field existed
+    document.getElementById('f-order-date').value=o.orderDate||o.brewDate||todayStr();
   }
   // ✅ ETA auto-calc (#6): re-estimate from the product's production timeline
   // template whenever the product changes, so ETA isn't just a guessed date.
+  // ✅ #14: picking "+ Add new product" opens the full Product form on top of
+  // this modal (order-in-progress is left untouched underneath) instead of
+  // forcing the user out to Settings → Products and losing what they'd
+  // already typed into the order.
   const prodSel=document.getElementById('f-order-product');
   prodSel.onchange=function(){
+    if(this.value==='__add_new__'){
+      openProductModalFromOrder();
+      return;
+    }
     if(this.value) document.getElementById('f-order-eta').value=calcOrderETA(this.value, todayStr());
   };
   openModal('modal-order');
+}
+// ✅ #14: entry point for the inline "+ Add new product" option in the order
+// form's product picker. Flags that a Product-modal save/cancel should
+// return control to the order modal instead of going to Settings.
+function openProductModalFromOrder(){
+  window._productModalOrderContext=true;
+  openProductModal();
+}
+// Wraps closeModal('modal-product') so Cancel/✕ on the Product modal also
+// resets the order form's product picker off "__add_new__" (which isn't a
+// real product) back to blank, if it was opened from the order flow.
+function closeProductModal(){
+  closeModal('modal-product');
+  if(window._productModalOrderContext){
+    window._productModalOrderContext=false;
+    const sel=document.getElementById('f-order-product');
+    if(sel && sel.value==='__add_new__') sel.value='';
+  }
 }
 
 function openEditOrder(id){ closeAll(); openOrderModal(id); }
@@ -2509,6 +2669,7 @@ async function saveOrder(){
   const brewDate=todayStr();
   let eta=document.getElementById('f-order-eta').value;
   if(!editId && !eta) eta=calcOrderETA(product, brewDate); // safety net if the change handler never fired (e.g. mobile select)
+  const nowIso=new Date().toISOString();
   const row={
     id,orderId:id,product:product,style:p.style||product,
     size:document.getElementById('f-order-size').value,
@@ -2520,6 +2681,12 @@ async function saveOrder(){
     recipient:document.getElementById('f-order-recipient').value,
     note:document.getElementById('f-order-note').value,
     star:false,brewDate:'',
+    // ✅ item-2: orderDate is the date the order was PLACED (user-editable,
+    // distinct from brewDate/ETA). updatedAt is an audit timestamp stamped
+    // on every save; createdAt is stamped once and preserved across edits —
+    // together these are "วันที่สั่งออเดอร์" + "วันที่บันทึกข้อมูล".
+    orderDate:document.getElementById('f-order-date').value||todayStr(),
+    updatedAt:nowIso,
   };
   // ✅ Priority "High" auto-stars the order (#7), and the star is meant to
   // always mirror priority==='high' — the star icon is just the fast-path
@@ -2532,9 +2699,10 @@ async function saveOrder(){
   row.star = priority==='high';
   if(editId){
     const i=orders.findIndex(o=>o.id===editId);
-    if(i>=0){ row.brewDate=orders[i].brewDate||brewDate; orders[i]=row; }
+    if(i>=0){ row.brewDate=orders[i].brewDate||brewDate; row.createdAt=orders[i].createdAt||nowIso; orders[i]=row; }
   } else {
     row.brewDate = brewDate;
+    row.createdAt = nowIso;
     orders.unshift(row);
   }
   await Sheets.write('orders',orders);
@@ -2545,14 +2713,23 @@ async function saveOrder(){
   // nothing to "add" manually. If this product has no QC template yet, the
   // batch is still created but flagged incomplete with a clear nudge to go
   // finish the QC template, rather than silently guessing values.
+  let newBatchId=null;
   if(!editId){
-    await createBatchFromOrder(row);
+    newBatchId = await createBatchFromOrder(row);
   }
 
   closeModal('modal-order');
   renderOrders();
   if(typeof renderDashboard==='function') renderDashboard();
   toast(editId?'Order updated':'Order created — batch & QC schedule generated ✓');
+
+  // ✅ #14: after creating a brand-new order, jump straight to QC Monitoring
+  // and open THIS batch's setup wizard — no hunting through the list for
+  // "the one I just made". Editing an existing order never triggers this.
+  if(newBatchId){
+    navigate('qc', document.getElementById('nav-qc'));
+    openBatchSetupWizard(newBatchId);
+  }
 }
 
 // ✅ Auto-batch-creation (#1): links Order ID ↔ Batch ID ↔ QC track ↔ Schedule.
@@ -2612,28 +2789,164 @@ async function createBatchFromOrder(orderRow){
     // ✅ Order status immediately reflects that production has actually begun
     await syncOrderStatusFromBatch(batchId);
 
-    if(!hasTemplate){
-      toast(`⚠️ Batch ${batchId} created but needs a QC template for "${productId}" — see QC Monitoring`,'⚠️');
-    }
-    // ✅ #9: always notify when a batch is running on the generic default
-    // timeline instead of a real one for its product — with a direct link
-    // (via the batch card banner, and this toast) to go set it up.
-    if(!hasTimeline){
-      toast(`📅 Batch ${batchId} (${prodName}) ยังไม่มี Timeline เฉพาะ — ใช้ตารางเริ่มต้นไปก่อน แตะการ์ดใน QC Monitoring เพื่อตั้งค่า`,'📅');
-    }
+    // ✅ #14: the "missing QC template" / "missing timeline" toasts that used
+    // to fire here are superseded by the Batch Setup Wizard that saveOrder()
+    // now opens immediately after this returns — that modal covers both
+    // gaps directly and interactively, so stacking two more toasts on top of
+    // it would just be noise. The batch card banners (b.incomplete /
+    // b.timelineIncomplete, rendered in QC Monitoring) still show if the
+    // wizard gets skipped, so nothing is silently lost.
+    return batchId;
   }catch(e){
     console.error('createBatchFromOrder error:',e);
     toast('Order saved, but batch auto-creation failed — check console','⚠️');
+    return null;
   }
 }
 
-// Jumps straight to Settings → Batch Settings with this product's timeline
-// pre-selected for editing (used by the "needs a timeline" banners/toasts).
+// ✅ #14: Batch Setup Wizard. One card per QC_PARAMS checkpoint, each with a
+// target value AND a day-offset — this is the merge point between the
+// previously-separate QC Template (targets only) and Timeline Template
+// (day-offsets only) systems. Pre-fills from whatever the product's
+// existing template/timeline already has, so re-opening it later (e.g. via
+// a batch's "timeline incomplete" banner) shows real current state, not a
+// blank form.
+function openBatchSetupWizard(batchId){
+  const batch=DB.get('batches',[]).find(b=>b.id===batchId);
+  if(!batch) return;
+  document.getElementById('bsw-batch-id').value=batchId;
+  const prod=DB.get('products',[]).find(p=>p.id===batch.product)||{};
+  document.getElementById('bsw-context').textContent=
+    `${batch.orderId?('Order '+batch.orderId+' · '):''}${prod.name||batch.product} · Batch ${batch.batchId}`;
+  const tmpl=DB.get('qc_templates',[]).find(x=>x.id===batch.product);
+  const timeline=getTimeline(batch.product);
+  document.getElementById('bsw-cards').innerHTML=QC_PARAMS.map(p=>{
+    const targetVal=tmpl?(tmpl[p.key]||''):'';
+    const stage=timeline.find(s=>guessQCParamFromTaskName(s.name)===p.key);
+    const dayVal=stage?stage.day:'';
+    return `<div class="card card-pad" style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:10px">${p.label}</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">${t('wizard.target_label')}</label>
+          <input class="form-input" id="bsw-target-${p.key}" value="${targetVal}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">${t('wizard.day_label')}</label>
+          <input class="form-input" type="number" min="0" id="bsw-day-${p.key}" placeholder="${t('wizard.day_placeholder')}" value="${dayVal}">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  openModal('modal-batch-setup');
+  applyI18N();
+}
+// Writes/updates ONE timeline stage that corresponds to a QC checkpoint,
+// matched via guessQCParamFromTaskName() so re-saving the wizard updates the
+// SAME stage instead of appending duplicates. Any other stages already in
+// the product's timeline (Dry Hop, Cold Crash, Packaging, etc. — none of
+// which are QC checkpoints) are left untouched.
+function upsertTimelineStageForQCParam(productId, paramKey, day){
+  const names={fermentTemp:'Ferment Temp Check',og:'Brew / Record OG',sg1:'Measure SG #1',sg2:'Measure SG #2',fg:'FG Stable',ph:'pH After Ferment'};
+  const types={fermentTemp:'Other',og:'Measure OG',sg1:'Measure SG',sg2:'Measure SG',fg:'Measure SG',ph:'Measure pH'};
+  // NOTE: intentionally named tplMap, not "t" — this file's i18n lookup
+  // function is also called t(); shadowing it here would silently break any
+  // future t('...') call added inside this function.
+  const tplMap=DB.get('timelineTemplates',{});
+  const stages=(tplMap[productId]&&tplMap[productId].length)?[...tplMap[productId]]:defaultTimeline();
+  const idx=stages.findIndex(s=>guessQCParamFromTaskName(s.name)===paramKey);
+  const stage={name:names[paramKey]||paramKey,day:Number(day)||0,type:types[paramKey]||'Other'};
+  if(idx>=0) stages[idx]={...stages[idx],...stage}; else stages.push(stage);
+  stages.sort((a,b)=>Number(a.day)-Number(b.day));
+  tplMap[productId]=stages;
+  DB.set('timelineTemplates',tplMap);
+}
+async function saveBatchSetupWizard(){
+  const batchId=document.getElementById('bsw-batch-id').value;
+  const batches=DB.get('batches',[]);
+  const bi=batches.findIndex(b=>b.id===batchId);
+  if(bi<0){ closeModal('modal-batch-setup'); return; }
+  const batch=batches[bi];
+  const productId=batch.product;
+  const prod=DB.get('products',[]).find(p=>p.id===productId)||{};
+
+  const entries=QC_PARAMS.map(p=>({
+    key:p.key,
+    target:(document.getElementById('bsw-target-'+p.key).value||'').trim(),
+    day:(document.getElementById('bsw-day-'+p.key).value||'').trim(),
+  }));
+  const anyTarget=entries.some(e=>e.target);
+  const anyDay=entries.some(e=>e.day!=='');
+
+  // 1) merge target values into the product's reusable QC Template
+  if(anyTarget){
+    const templates=DB.get('qc_templates',[]);
+    const ti=templates.findIndex(x=>x.id===productId);
+    const row=ti>=0?{...templates[ti]}:{id:productId,name:`${prod.name||productId} Template`,style:prod.style||productId,abv:'',notes:''};
+    entries.forEach(e=>{ if(e.target) row[e.key]=e.target; });
+    if(ti>=0) templates[ti]=row; else templates.push(row);
+    await Sheets.write('qc_templates',templates);
+  }
+
+  // 2) merge day-offsets into the product's reusable Timeline Template —
+  // this is what actually makes genTasks() produce a dated Schedule entry.
+  if(anyDay){
+    entries.forEach(e=>{ if(e.day!=='') upsertTimelineStageForQCParam(productId,e.key,e.day); });
+  }
+
+  // 3) reflect into THIS batch right away — future orders read the template/
+  // timeline above, but the batch that's already been created needs its own
+  // qc[].target values updated directly.
+  entries.forEach(e=>{
+    if(e.target && batch.qc[e.key]) batch.qc[e.key].target = e.key==='fermentTemp' ? `${e.target}°C` : e.target;
+  });
+  const hasTemplateNow=!!DB.get('qc_templates',[]).find(x=>x.id===productId);
+  const hasTimelineNow=hasCustomTimeline(productId);
+  batch.incomplete=!hasTemplateNow;
+  if(hasTemplateNow) batch.incompleteReason='';
+  batch.timelineIncomplete=!hasTimelineNow;
+  if(hasTimelineNow) batch.timelineIncompleteReason='';
+  batches[bi]=batch;
+  await Sheets.write('batches',batches);
+  await logAudit('UPDATE','batches',{id:batchId,viaWizard:true});
+
+  // 4) regenerate tasks so the new day-offsets actually produce dated tasks
+  refreshAllTasks();
+  if(document.getElementById('task-board')) schRenderTasks();
+
+  closeModal('modal-batch-setup');
+  if(document.getElementById('qc-batch-list')) renderQC();
+  toast(t('wizard.saved_toast'),'✓');
+
+  // ✅ item-4 (updated per Tony's follow-up: "อยากให้แอปนำไปเลยไม่ต้องมีการ
+  // กด" — no confirm click, just navigate straight there): the wizard above
+  // only sets days for the 6 QC checkpoints; the full Production Timeline
+  // can also include non-QC stages (Dry Hop, Cold Crash, Transfer,
+  // Packaging...) that this wizard never touches. Auto-navigate every time
+  // (template already customized or not) so it's a deliberate review step,
+  // not a one-time nudge that stops appearing once a template technically
+  // exists. A toast explains where the user landed and why, since there's
+  // no confirm dialog anymore to announce it.
+  toast('ตั้งค่าเป้าหมาย QC เรียบร้อย — พาไปตรวจสอบ Production Timeline ต่อ','🗓️');
+  goEditTimelineFor(productId);
+}
+// Non-blocking — closing without filling anything in just leaves the batch's
+// existing incomplete/timelineIncomplete banners in place (already built),
+// which is the "come back and finish later" path.
+function skipBatchSetupWizard(){
+  closeModal('modal-batch-setup');
+  toast(t('wizard.skip_confirm'),'⏭');
+  if(document.getElementById('qc-batch-list')) renderQC();
+}
+
+// ✅ Tony: "อยากให้สามารถแก้ไขได้จบในหน้า QC monitor เลย" (want to be able to
+// finish editing right on the QC Monitoring page) — this used to always
+// navigate away to Settings → Batch Settings, which meant leaving whatever
+// page (usually QC Monitoring) the "needs a timeline" banner was on. Now it
+// opens the timeline editor as a modal on top of the current page instead —
+// no page change at all, from the QC banner or the post-wizard follow-up.
 function goEditTimelineFor(productId){
-  window.tlEditRecipe=productId;
-  navigate('settings', document.getElementById('nav-settings'));
-  const btn=document.querySelector('#settings-tabs .tab[onclick*="batch"]')||document.querySelector('#settings-tabs .tab');
-  if(btn) filterSettings('batch',btn); else settingsTab='batch';
+  openTimelineEditModal(productId);
 }
 
 async function deleteOrder(id){
@@ -2803,20 +3116,44 @@ function nextBatchStage(status){
   return (idx>=0 && idx<BATCH_STAGE_ORDER.length-1) ? BATCH_STAGE_ORDER[idx+1] : null;
 }
 const STAGE_CTA={'packaging':{icon:'📦',label:'Move to Packaging'},'completed':{icon:'✓',label:'Mark Completed'}};
+// ✅ #14: this is now the DEFAULT view for every batch card, not just
+// completed/ready ones — with many orders in flight, always rendering the
+// full checkpoint-by-checkpoint flow made the list long and slow to scan.
+// Shows just: Order ID / product / fermentation progress % / a dot-timeline
+// (●──●──○──○, no numbers) standing in for the detailed QC section / next
+// action. Tapping the card expands it to the full detailed card (real
+// values, editable) via qcExpandedSet — every batch is expandable, not just
+// completed/ready ones.
+function renderDotTimeline(flow){
+  const dotColor=s=>s.state==='done'?'var(--green)':s.state==='current'?'var(--blue)':s.state==='over'?'var(--red)':'var(--border2)';
+  return `<span style="display:inline-flex;align-items:center;vertical-align:middle">`+flow.steps.map((s,i)=>{
+    const dot=`<span title="${s.label}" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${dotColor(s)};flex-shrink:0"></span>`;
+    const line=i<flow.steps.length-1?`<span style="display:inline-block;width:10px;height:1.5px;background:var(--border2)"></span>`:'';
+    return dot+line;
+  }).join('')+`</span>`;
+}
 function renderMiniBatchCard(b, flow, urgency){
   const isCompleted=urgency.key==='completed';
   const daysLeft=b.completedAt?Math.max(0,7-Math.floor((Date.now()-b.completedAt)/86400000)):7;
-  const lastTs=lastQCTs(b);
-  const dateLabel=isCompleted?`auto-archives in ${daysLeft} day${daysLeft===1?'':'s'}`:(lastTs?`บันทึกล่าสุด ${fmtDayMon(lastTs)}`:'');
+  const prodName=(DB.get('products',[]).find(p=>p.id===b.product)||{}).name||b.style||b.product;
   const next=isCompleted?null:nextBatchStage(b.status);
-  const cta=next?(STAGE_CTA[next]||{icon:'➡️',label:'Advance stage'}):null;
-  const badge=isCompleted?'<span class="badge badge-green">✓ COMPLETED</span>':`<span class="badge badge-blue">✓ QC ครบ${b.status==='packaging'?' — กำลัง Packaging':''}</span>`;
-  return `<div class="qc-batch-card qc-mini" style="opacity:${isCompleted?'.82':'.92'}" onclick="toggleQCCardExpand('${b.id}')">
+  const showCTA=urgency.key==='ready'; // only "QC done, advance stage" gets a one-tap CTA here
+  const cta=(showCTA&&next)?(STAGE_CTA[next]||{icon:'➡️',label:'Advance stage'}):null;
+  const badge=isCompleted?'<span class="badge badge-green">✓ COMPLETED</span>'
+    :urgency.key==='overdue'?'<span class="badge badge-red">⚠️ OVERDUE</span>'
+    :urgency.key==='ready'?`<span class="badge badge-blue">✓ QC ครบ${b.status==='packaging'?' — Packaging':''}</span>`
+    :'';
+  const nextActionText=isCompleted?`auto-archives in ${daysLeft} day${daysLeft===1?'':'s'}`:flow.next.text;
+  return `<div class="qc-batch-card qc-mini" style="opacity:${isCompleted?'.82':'.96'}" onclick="toggleQCCardExpand('${b.id}')">
       <div class="qc-batch-head" style="border-bottom:none;padding:12px 16px;min-height:80px">
         <div style="width:38px;height:38px;border-radius:50%;background:${getProductColor(b.product)};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;text-align:center;line-height:1.2;flex-shrink:0;filter:grayscale(.3)">${getProductAbbr(b.product)}</div>
         <div class="qc-batch-meta">
-          <div class="qc-batch-id" style="display:flex;align-items:center;gap:8px;font-size:14px">${b.batchId} ${badge}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">${b.style||b.product} · 🧪 ${b.tank}${dateLabel?' · '+dateLabel:''}</div>
+          <div class="qc-batch-id" style="display:flex;align-items:center;gap:8px;font-size:14px">${b.orderId?('Order '+b.orderId):b.batchId} ${badge}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span>${prodName}${isCompleted?'':` · ${flow.progress}%`}</span>
+            ${renderDotTimeline(flow)}
+            <span style="color:var(--text2)">${isCompleted?'':'➜ '}${nextActionText}</span>
+          </div>
         </div>
         <div style="margin-left:auto;display:flex;gap:6px;align-items:center" onclick="event.stopPropagation()">
           ${cta?`<button class="btn btn-primary btn-sm" onclick="quickAdvanceBatch('${b.id}')">${cta.icon} ${cta.label}</button>`:''}
@@ -2851,13 +3188,14 @@ function renderBatchCard(b, flow, urgency){
     'completed':'<span class="badge badge-green">COMPLETED</span>',
     'packaging':'<span class="badge badge-purple">PACKAGING</span>',
   };
-  // Collapse to the compact row unless the user tapped it open. Batches that
-  // still need QC action (overdue/due/waiting) always render in full — those
-  // are exactly the ones the Action Dashboard is meant to surface.
-  if((urgency.key==='completed'||urgency.key==='ready') && !qcExpandedSet.has(b.id)){
+  // ✅ #14: EVERY batch defaults to the compact mini card now (regardless of
+  // urgency) — with many orders in flight, showing the full checkpoint flow
+  // for every overdue/due/waiting batch made the list too long to scan at a
+  // glance. Tapping any card expands it to the full detail view below;
+  // tapping the collapse bar (or the card again) takes it back to mini.
+  if(!qcExpandedSet.has(b.id)){
     return renderMiniBatchCard(b, flow, urgency);
   }
-  const isExpandedCollapsible=(urgency.key==='completed'||urgency.key==='ready');
   // ✅ #2: flag abnormal QC readings on the card itself (red border + banner),
   // not just a toast at save time that's easy to miss afterward.
   const hasAbnormal=Object.values(b.qc||{}).some(p=>p&&p.abnormal);
@@ -2866,10 +3204,9 @@ function renderBatchCard(b, flow, urgency){
     return meta?meta.label:key;
   });
   return `<div class="qc-batch-card${hasAbnormal?' abnormal':''}" style="position:relative">
-    ${isExpandedCollapsible?`
     <div style="background:var(--bg);color:var(--text3);font-size:11px;font-weight:700;padding:8px 14px;display:flex;align-items:center;gap:6px;cursor:pointer;border-bottom:1px solid var(--border)" onclick="toggleQCCardExpand('${b.id}')">
-      <span>▴</span><span>${urgency.key==='completed'?'✓ COMPLETED':'✓ QC ครบแล้ว'} — แตะเพื่อย่อกลับ</span>
-    </div>`:''}
+      <span>▴</span><span>${urgency.key==='completed'?'✓ COMPLETED — ':''}แตะเพื่อย่อกลับ</span>
+    </div>
     ${b.incomplete?`
     <div style="background:var(--orange-light);color:#92400E;font-size:11px;font-weight:700;padding:8px 14px;display:flex;align-items:center;gap:6px;cursor:pointer" onclick="openTemplateModal('${b.product}')" title="Click to complete the QC template">
       <span>⚠️</span><span>${b.incompleteReason||'Setup incomplete — QC targets are not set for this batch'}</span>
@@ -3037,10 +3374,9 @@ function lastQCTs(b){
 
 function qcxCard(b,s){
   const cls=s.state==='current'?'current':(s.state==='pending'?'pending':(s.state==='over'?'over':''));
-  let valHtml, subHtml='', icoHtml='';
+  let valHtml, icoHtml='';
   if(s.state==='pending'){
     valHtml=`<div class="qcx-val muted">${s.short}</div>`;
-    subHtml=s.target?`<div class="qcx-csub">Target ${s.target}</div>`:'';
     icoHtml=`<div class="qcx-cico"><span class="qcx-badge wait"></span></div>`;
   } else {
     valHtml=`<div class="qcx-val">${s.display}</div>`;
@@ -3048,12 +3384,87 @@ function qcxCard(b,s){
     else if(s.state==='over') icoHtml=`<div class="qcx-cico"><span class="qcx-badge bad">!</span></div>`;
     else icoHtml=`<div class="qcx-cico"><span class="qcx-badge ok">✓</span></div>`;
   }
+  // ✅ item-3, then extended per Tony's follow-up: "อยากให้สามารถแก้ ส่วน
+  // target range ได้ทุกการ์ดในหน้านี้เลย" (want to be able to edit the
+  // target range on every card on this page) — originally the ✎ inline
+  // editor only rendered for 'pending' (not-yet-measured) checkpoints;
+  // already-measured/current/over-limit checkpoints showed no target line
+  // at all, so fixing a wrong target after the fact meant leaving this
+  // card and going through Settings. Now every state gets the same target
+  // line + ✎, regardless of whether it's pending, in-progress, done, or
+  // flagged abnormal.
+  const subHtml=`<div class="qcx-csub" id="qcx-target-${b.id}-${s.key}">${s.target?('Target '+s.target):'<span style="color:var(--text3)">ยังไม่ตั้งเป้าหมาย</span>'} <span onclick="event.stopPropagation();editQCTargetInline('${b.id}','${s.key}')" style="cursor:pointer;opacity:.65" title="แก้ค่าเป้าหมาย">✎</span></div>`;
   return `<div class="qcx-card ${cls}" onclick="openQCRecord('${b.id}','${s.key}','${s.label}','${s.target||''}')">
     ${valHtml}
     <div class="qcx-clabel">${s.label}</div>
     ${subHtml}
     ${icoHtml}
   </div>`;
+}
+// ✅ item-3: swaps the pending checkpoint's target line into a tiny inline
+// input, right inside the qcx-card tile — no modal/popup involved at all.
+// stopPropagation on every inner control here is essential: the surrounding
+// .qcx-card tile's own onclick opens the QC record modal, and without it
+// every keystroke/click on the input would also fire that.
+function editQCTargetInline(batchId, paramKey){
+  const wrap=document.getElementById(`qcx-target-${batchId}-${paramKey}`);
+  if(!wrap) return;
+  const batches=DB.get('batches',[]);
+  const batch=batches.find(x=>x.id===batchId);
+  const current=((batch&&batch.qc&&batch.qc[paramKey]&&batch.qc[paramKey].target)||'').replace('°C','');
+  const inputId=`qcx-target-input-${batchId}-${paramKey}`;
+  wrap.innerHTML=`<input type="text" id="${inputId}" value="${current.replace(/"/g,'&quot;')}" placeholder="เช่น 1.050-1.055" style="width:76px;font-size:11px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;color:var(--text)" onclick="event.stopPropagation()">
+    <span onclick="event.stopPropagation();saveQCTargetInline('${batchId}','${paramKey}')" style="cursor:pointer;color:var(--green);margin-left:3px;font-weight:700" title="บันทึก">✓</span>
+    <span onclick="event.stopPropagation();renderQC()" style="cursor:pointer;color:var(--text3);margin-left:2px" title="ยกเลิก">✕</span>`;
+  const inp=document.getElementById(inputId);
+  if(inp){
+    inp.focus(); inp.select();
+    inp.onkeydown=(e)=>{
+      e.stopPropagation();
+      if(e.key==='Enter'){ e.preventDefault(); saveQCTargetInline(batchId,paramKey); }
+      else if(e.key==='Escape'){ renderQC(); }
+    };
+  }
+}
+// Shared persistence for "edit target range" wherever it's triggered from
+// (card inline ✎, or the Record modal's ✎ — see editQCTargetInModal below).
+// Writes the target onto this one batch's checkpoint AND propagates it into
+// the reusable QC Template (same as the Batch Setup Wizard does) so the next
+// order for this product starts pre-filled — a one-off card fix doubles as
+// the template fix. Returns the normalized value actually stored (e.g. with
+// °C appended for fermentTemp) so callers can reflect it back in their UI.
+async function persistQCTarget(batchId, paramKey, rawVal){
+  const val=(rawVal||'').trim();
+  const batches=DB.get('batches',[]);
+  const bi=batches.findIndex(x=>x.id===batchId);
+  if(bi<0) return val;
+  const batch=batches[bi];
+  if(!batch.qc) batch.qc={};
+  if(!batch.qc[paramKey]) batch.qc[paramKey]={value:'',status:'pending',ts:''};
+  const normalized=(paramKey==='fermentTemp' && val && !val.includes('°C')) ? `${val}°C` : val;
+  batch.qc[paramKey].target = normalized;
+  const productId=batch.product;
+  if(val){
+    const templates=DB.get('qc_templates',[]);
+    const ti=templates.findIndex(x=>x.id===productId);
+    const prod=DB.get('products',[]).find(p=>p.id===productId)||{};
+    const row=ti>=0?{...templates[ti]}:{id:productId,name:`${prod.name||productId} Template`,style:prod.style||productId,abv:'',notes:''};
+    row[paramKey]=val;
+    if(ti>=0) templates[ti]=row; else templates.push(row);
+    await Sheets.write('qc_templates',templates);
+  }
+  const hasTemplateNow=!!DB.get('qc_templates',[]).find(x=>x.id===productId);
+  batch.incomplete=!hasTemplateNow;
+  if(hasTemplateNow) batch.incompleteReason='';
+  await Sheets.write('batches',batches);
+  await logAudit('UPDATE','batches',{id:batchId,param:paramKey,target:normalized,viaInlineEdit:true});
+  return normalized;
+}
+async function saveQCTargetInline(batchId, paramKey){
+  const inp=document.getElementById(`qcx-target-input-${batchId}-${paramKey}`);
+  await persistQCTarget(batchId, paramKey, inp?.value||'');
+  renderQC();
+  toast('บันทึกค่าเป้าหมายแล้ว','✓');
 }
 
 function qcxNode(s){
@@ -3066,7 +3477,10 @@ function openQCRecord(batchId,param,label,target){
   document.getElementById('qc-record-batch-id').value=batchId;
   document.getElementById('qc-record-param').value=param;
   document.getElementById('qc-record-title').textContent='Record: '+label;
-  document.getElementById('qc-record-target').textContent=target||'—';
+  // Rebuild (not just textContent=) so re-opening this modal for a
+  // different checkpoint always resets the target field back to its normal
+  // display state, even if it was left mid-edit (input showing) last time.
+  restoreQCTargetInModalView(target||'—');
   document.getElementById('qc-record-value').value='';
   document.getElementById('qc-record-note').value='';
   const now=new Date();
@@ -3084,6 +3498,56 @@ function openQCRecord(batchId,param,label,target){
     hint.style.display='none';
   }
   openModal('modal-qc-record');
+}
+
+// ✅ Tony's follow-up: "อยากให้สามารถแก้ ส่วน target range ได้ทุกการ์ดในหน้า
+// นี้เลย" — the Record modal used to show Target Range as read-only text,
+// so fixing a wrong/missing target meant closing this modal, hunting down
+// the ✎ on the card behind it (or Settings), fixing it there, then
+// re-opening this modal to actually enter the measurement. Now the same
+// tiny inline editor pattern used on the cards (editQCTargetInline) is
+// available right here too — swap the text for an input, save, and the
+// modal's own live abnormal-value check picks up the new target immediately.
+function editQCTargetInModal(){
+  const view=document.getElementById('qc-record-target-view');
+  if(!view) return;
+  const current=document.getElementById('qc-record-target').textContent.trim();
+  const clean=current==='—' ? '' : current.replace('°C','');
+  view.innerHTML=`<input type="text" id="qc-record-target-input" value="${clean.replace(/"/g,'&quot;')}" placeholder="เช่น 1.050-1.055" style="width:120px;font-size:14px;padding:4px 6px;border:1px solid var(--border2);border-radius:4px;color:var(--text)">
+    <span onclick="saveQCTargetInModal()" style="cursor:pointer;color:var(--green);font-weight:700;font-size:13px" title="บันทึก">✓</span>
+    <span onclick="cancelQCTargetInModal()" style="cursor:pointer;color:var(--text3);font-size:13px" title="ยกเลิก">✕</span>`;
+  const inp=document.getElementById('qc-record-target-input');
+  if(inp){
+    inp.focus(); inp.select();
+    inp.onkeydown=(e)=>{
+      if(e.key==='Enter'){ e.preventDefault(); saveQCTargetInModal(); }
+      else if(e.key==='Escape'){ cancelQCTargetInModal(); }
+    };
+  }
+}
+function restoreQCTargetInModalView(displayVal){
+  const view=document.getElementById('qc-record-target-view');
+  if(!view) return;
+  view.innerHTML=`<div style="font-size:16px;font-weight:700;color:var(--text)" id="qc-record-target">${displayVal||'—'}</div>
+    <span onclick="editQCTargetInModal()" style="cursor:pointer;opacity:.65;font-size:13px" title="แก้ค่าเป้าหมาย">✎</span>`;
+}
+function cancelQCTargetInModal(){
+  // re-read the last-saved value straight from storage, since the text node
+  // was just replaced by the input and no longer holds the old display text
+  const batchId=document.getElementById('qc-record-batch-id').value;
+  const paramKey=document.getElementById('qc-record-param').value;
+  const batch=DB.get('batches',[]).find(x=>x.id===batchId);
+  const stored=(batch&&batch.qc&&batch.qc[paramKey]&&batch.qc[paramKey].target)||'';
+  restoreQCTargetInModalView(stored||'—');
+}
+async function saveQCTargetInModal(){
+  const batchId=document.getElementById('qc-record-batch-id').value;
+  const paramKey=document.getElementById('qc-record-param').value;
+  const inp=document.getElementById('qc-record-target-input');
+  const normalized=await persistQCTarget(batchId, paramKey, inp?.value||'');
+  restoreQCTargetInModalView(normalized||'—');
+  qcLiveCheckAbnormal();
+  toast('บันทึกค่าเป้าหมายแล้ว','✓');
 }
 
 // Parses target strings like "1.050–1.055", "18–20°C", "3.50–4.20" (en-dash or
@@ -3165,6 +3629,9 @@ async function saveQCRecord(){
     } else {
       toast(nextP?`บันทึก ${value} แล้ว — ขั้นตอนถัดไป: ${nextP.label}`:`บันทึก ${value} แล้ว — ครบทุก checkpoint แล้ว!`,'✓');
     }
+    // ✅ item-2 (part b): soft-navigate to Schedule, filtered to this order's
+    // "Now" tasks, right after a QC value is saved — see jumpToScheduleForBatch().
+    jumpToScheduleForBatch(batchId);
   };
 
   if(abnormalMsg){
@@ -3188,8 +3655,34 @@ function autoCompleteLinkedTask(batchId, qcParam, value){
       t.done=true; t.doneAt=Date.now(); t.completedFromQC=true;
       const doneMap=DB.get('taskDoneMap',{}); doneMap[t.id]=t.doneAt; DB.set('taskDoneMap',doneMap);
       if(document.getElementById('task-board')) schRenderTasks();
+      // ✅ item-2: this auto-completion path bypassed completeTask(), which is
+      // the only place that used to keep the order's status synced with real
+      // progress — so recording a QC value silently completed a task but
+      // never nudged the order forward. Same one-line fix as completeTask().
+      syncOrderStatusFromBatch(batchId);
     }
   }catch(e){ console.error('autoCompleteLinkedTask error:',e); }
+}
+
+// ✅ item-2 (part b): "อยากให้กระบวนการทุกอย่างมีการลิ้งหน้านี้...หลังจากที่
+// หน้าQC มีการกดลงข้อมูลตัวเลข OG เสร็จให้เด้งมาหน้านี้ ที่งาน now ที่ตรงกับ
+// order id" — after saving a QC measurement, softly take the user to the
+// Schedule page filtered to that order's "Now" tasks, so whatever's next
+// (another QC checkpoint, or a non-QC step like Transfer/Cold Crash that's
+// already sitting on the schedule from the timeline) is right there to
+// confirm. Soft, not forced — same non-blocking pattern as the order-save →
+// batch-setup-wizard jump in #14: it navigates away, but nothing prevents
+// the user from immediately tapping elsewhere afterward.
+function jumpToScheduleForBatch(batchId){
+  try{
+    const batch=DB.get('batches',[]).find(b=>b.id===batchId);
+    if(!batch) return;
+    navigate('schedule', document.getElementById('nav-schedule'));
+    const searchEl=document.getElementById('task-search');
+    if(searchEl) searchEl.value=batch.orderId||batch.id;
+    const nowTabBtn=document.querySelector('#tab-row .tab');
+    schSwitchTab('now', nowTabBtn && nowTabBtn.textContent.trim().startsWith('Now') ? nowTabBtn : null);
+  }catch(e){ console.error('jumpToScheduleForBatch error:',e); }
 }
 
 function openBatchModal(){
@@ -3586,9 +4079,86 @@ function renderQCTemplatesSettings(){
   </div>`;
 }
 
+// Shared between the Settings page's inline timeline editor and the
+// modal-timeline-edit popup (see openTimelineEditModal) — one row markup,
+// two surfaces. `source` ('settings' or 'modal') decides which container id
+// readTimelineInputs() reads back from and which Remove button to wire up,
+// so the two surfaces never fight over the same #tl-stages id.
+// ✅ hardening (same class of bug as the "Save Timeline for NEIPA" report
+// that was never reproducible): if any single stage entry in a product's
+// stored timeline is malformed — not a plain object, or missing name/day —
+// the OLD unguarded `st.name||''` / raw `${st.day}` interpolation would
+// throw partway through building the row list, or inject a stray `"` from
+// an unescaped day value into the HTML and corrupt every button's onclick
+// after it. Either way, every button below the bad stage (Add Stage
+// included, since it lives right after this list) would stop responding
+// with zero visible error — exactly "กด add stage ไม่ได้" with no clue why.
+// Skipping (not crashing on) a bad entry, and escaping both fields the same
+// way, means one corrupted stage can't take the rest of the editor down.
+// ✅ split into two layers: stagesRowsHtml() renders from an ARRAY we already
+// have in memory (no DB read needed), timelineStageRowsHtml() is the
+// convenience wrapper that looks a recipe's stages up from DB first. This
+// split exists specifically so addTimelineStage()/removeTimelineStage() below
+// can render the exact array they just wrote to DB.set(), instead of
+// immediately reading it back via getTimeline() — see the comment on those
+// functions for why that read-back was suspected as the cause of Tony's
+// "toast says added, but no new row appears" report.
+function stagesRowsHtml(stages, source){
+  return stages.map((st,i)=>{
+    if(!st || typeof st!=='object') return '';
+    const safeName=String(st.name||'').replace(/"/g,'&quot;');
+    const safeDay=String(Number(st.day)||0).replace(/"/g,'&quot;');
+    return `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="width:24px;height:24px;border-radius:50%;background:var(--orange-light);color:var(--orange-dark);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
+      <input class="form-input tl-name" value="${safeName}" style="flex:1;min-width:0" placeholder="Stage name">
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        <span style="font-size:12px;color:var(--text3)">Day</span>
+        <input class="form-input tl-day" type="number" value="${safeDay}" style="width:64px;text-align:center">
+      </div>
+      <button onclick="removeTimelineStage(${i},'${source||'settings'}')" title="Remove" style="width:28px;height:28px;border-radius:6px;background:var(--red-bg);color:var(--red-text);font-size:14px;flex-shrink:0">✕</button>
+    </div>`;
+  }).join('');
+}
+function timelineStageRowsHtml(recipe, source){
+  return stagesRowsHtml(getTimeline(recipe), source);
+}
+function timelineContainerId(source){ return source==='modal' ? 'tlm-stages' : 'tl-stages'; }
+// The Settings page and the QC-page modal each have their OWN "not yet
+// customized" warning banner (#tls-warning / #tlm-warning) — both are always
+// present in their markup now (toggled via style.display, not
+// added/removed from the HTML string) so add/remove/save/reset can flip the
+// right one directly, without a full DB round-trip re-render just to decide
+// whether it should show.
+function timelineWarningElId(source){ return source==='modal' ? 'tlm-warning' : 'tls-warning'; }
+// After add/remove/save/reset, refresh whichever surface is actually being
+// used — re-rendering the OTHER (hidden/closed) one would be wasted work at
+// best, and at worst could throw if that surface's DOM isn't present.
+function refreshTimelineSurface(source){
+  if(source==='modal'){
+    if(document.getElementById('modal-timeline-edit')) renderTimelineEditModalBody();
+  } else if(document.getElementById('settings-content')){
+    document.getElementById('settings-content').innerHTML=renderBatchSettings(DB.get('settings',{}));
+  }
+}
+function openTimelineEditModal(productId){
+  window.tlEditRecipe=productId;
+  renderTimelineEditModalBody();
+  openModal('modal-timeline-edit');
+}
+function renderTimelineEditModalBody(){
+  const recipe=window.tlEditRecipe;
+  const prod=DB.get('products',[]).find(p=>p.id===recipe);
+  const titleEl=document.getElementById('tlm-title');
+  if(titleEl) titleEl.textContent='Production Timeline'+(prod?' — '+prod.name:(recipe?' — '+recipe:''));
+  const stagesEl=document.getElementById('tlm-stages');
+  if(stagesEl) stagesEl.innerHTML=timelineStageRowsHtml(recipe,'modal');
+  const warnEl=document.getElementById('tlm-warning');
+  if(warnEl) warnEl.style.display = hasCustomTimeline(recipe) ? 'none':'block';
+}
+
 function renderBatchSettings(s){
   const recipe=window.tlEditRecipe||timelineRecipes()[0];
-  const stages=getTimeline(recipe);
   // ✅ #9/#11: option value is the real product id (what getTimeline/genTasks
   // actually key off of); label is the friendly product name so two
   // differently-named products of the same style are easy to tell apart.
@@ -3598,35 +4168,14 @@ function renderBatchSettings(s){
     return `<option value="${r}" ${r===recipe?'selected':''}>${label}</option>`;
   }).join('');
   const recipeLabel=(()=>{ const prod=DB.get('products',[]).find(p=>p.id===recipe); return prod?prod.name:recipe; })();
-  const stageRows=stages.map((st,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="width:24px;height:24px;border-radius:50%;background:var(--orange-light);color:var(--orange-dark);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
-      <input class="form-input tl-name" value="${(st.name||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:0" placeholder="Stage name">
-      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        <span style="font-size:12px;color:var(--text3)">Day</span>
-        <input class="form-input tl-day" type="number" value="${st.day}" style="width:64px;text-align:center">
-      </div>
-      <button onclick="removeTimelineStage(${i})" title="Remove" style="width:28px;height:28px;border-radius:6px;background:var(--red-bg);color:var(--red-text);font-size:14px;flex-shrink:0">✕</button>
-    </div>`).join('');
+  const stageRows=timelineStageRowsHtml(recipe,'settings');
   return `<div style="max-width:760px">
     <div class="card card-pad" style="margin-bottom:16px">
-      <div style="font-size:14px;font-weight:700;margin-bottom:16px">Batch Number Rule</div>
-      <div class="form-row-3">
-        <div class="form-group"><label class="form-label">Prefix</label><input class="form-input" value="${s.batchPrefix||'BWF'}" id="s-prefix"></div>
-        <div class="form-group"><label class="form-label">Next Number</label><input class="form-input" value="${s.batchNextNum||'023'}" id="s-nextnum"></div>
-        <div class="form-group"><label class="form-label">Preview</label>
-          <div style="padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:15px;font-weight:700">${s.batchPrefix||'BWF'}${s.batchNextNum||'023'}</div>
-        </div>
-      </div>
-      <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="saveBatchSettings()">💾 Save Number Rule</button>
-    </div>
-
-    <div class="card card-pad">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px">
         <div>
           <div style="font-size:14px;font-weight:700">Production Timeline Template</div>
           <div style="font-size:12px;color:var(--text3);margin-top:2px;max-width:440px">Editable per product. When an order creates a batch for this product, the Schedule auto-generates these stages from the brew date. Each batch can still be adjusted individually afterward.</div>
-          ${!hasCustomTimeline(recipe)?`<div style="font-size:11.5px;color:var(--orange-dark);background:var(--orange-light);border-radius:var(--radius-xs);padding:6px 10px;margin-top:8px;display:inline-block">⚠️ ยังไม่เคยตั้งค่าเฉพาะสินค้านี้ — ตอนนี้ใช้ตารางเริ่มต้น (Default) อยู่ กด "Save Timeline" เพื่อบันทึกเป็นของสินค้านี้โดยเฉพาะ</div>`:''}
+          <div id="tls-warning" style="font-size:11.5px;color:var(--orange-dark);background:var(--orange-light);border-radius:var(--radius-xs);padding:6px 10px;margin-top:8px;display:${hasCustomTimeline(recipe)?'none':'inline-block'}">⚠️ ยังไม่เคยตั้งค่าเฉพาะสินค้านี้ — ตอนนี้ใช้ตารางเริ่มต้น (Default) อยู่ กด "Save Timeline" เพื่อบันทึกเป็นของสินค้านี้โดยเฉพาะ</div>
         </div>
         <div class="form-group" style="margin:0;min-width:200px">
           <label class="form-label">Product</label>
@@ -3637,11 +4186,31 @@ function renderBatchSettings(s){
         <span style="width:24px"></span><span style="flex:1">Stage</span><span style="width:96px;text-align:center">Day offset</span><span style="width:28px"></span>
       </div>
       <div id="tl-stages">${stageRows}</div>
-      <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="addTimelineStage()">＋ Add Stage</button>
+      <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="addTimelineStage('settings')">＋ Add Stage</button>
       <div style="display:flex;gap:10px;margin-top:18px">
-        <button class="btn btn-primary" onclick="saveTimelineTemplate()">💾 Save Timeline for ${recipeLabel}</button>
-        <button class="btn btn-outline" onclick="resetTimelineTemplate()">↺ Reset to Default</button>
+        <button class="btn btn-primary" onclick="saveTimelineTemplate('settings')">💾 Save Timeline for ${recipeLabel}</button>
+        <button class="btn btn-outline" onclick="resetTimelineTemplate('settings')">↺ Reset to Default</button>
       </div>
+    </div>
+
+    <!-- ✅ item-6: Tony — "อยากให้เมนู batch number rule อยู่ล่างสุดกลัวผู้ใช้กดผิด
+         เพราะผมเองก็ไม่รู้ใช้งานยังไง" (want Batch Number Rule at the very
+         bottom, worried about mis-clicks since even I don't know how to use
+         it). Moved below Production Timeline (the section people actually
+         need day-to-day) and added a plain-language caption explaining what
+         it does and when to touch it, so it reads as "advanced, rarely
+         needed" rather than a mystery button next to everything else. -->
+    <div class="card card-pad">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">Batch Number Rule <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:none">(ตั้งค่าขั้นสูง — ปกติไม่ต้องแตะ)</span></div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px;max-width:520px;line-height:1.6">กำหนดรูปแบบเลข Batch ที่ระบบสร้างอัตโนมัติทุกครั้งที่มีออเดอร์ใหม่ เช่น "BWF" + "023" → BWF023 — แก้ตรงนี้เฉพาะตอนต้องการเปลี่ยนรูปแบบเลข Batch เท่านั้น (เช่น ขึ้นปีใหม่ หรือเปลี่ยนสาขา) ไม่เกี่ยวกับการสั่งออเดอร์หรือ QC ปกติ</div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">Prefix</label><input class="form-input" value="${s.batchPrefix||'BWF'}" id="s-prefix"></div>
+        <div class="form-group"><label class="form-label">Next Number</label><input class="form-input" value="${s.batchNextNum||'023'}" id="s-nextnum"></div>
+        <div class="form-group"><label class="form-label">Preview</label>
+          <div style="padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:15px;font-weight:700">${s.batchPrefix||'BWF'}${s.batchNextNum||'023'}</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="saveBatchSettings()">💾 Save Number Rule</button>
     </div>
   </div>`;
 }
@@ -3651,13 +4220,25 @@ function changeTimelineRecipe(r){
   window.tlEditRecipe=r;
   document.getElementById('settings-content').innerHTML=renderBatchSettings(DB.get('settings',{}));
 }
-function readTimelineInputs(){
-  const names=[...document.querySelectorAll('#tl-stages .tl-name')];
-  const days=[...document.querySelectorAll('#tl-stages .tl-day')];
+// ✅ item-5 hardening: this used to zip two separately-queried NodeLists
+// together by array index (names[i] paired with days[i]) — correct only if
+// both lists always stay the exact same length and order. Any future change
+// to the row markup that adds/removes a `.tl-name` or `.tl-day` without the
+// other, or a rendering timing hiccup, would silently pair the wrong day
+// with the wrong stage — or throw a TypeError reading days[i] out of bounds,
+// which would abort the whole save with no toast (looks exactly like the
+// button "just doesn't work"). Reading each row's own day input directly via
+// closest() removes the index-pairing assumption entirely.
+function readTimelineInputs(containerId){
+  containerId = containerId || 'tl-stages';
+  const rows=[...document.querySelectorAll('#'+containerId+' > div')];
   const out=[];
-  names.forEach((n,i)=>{
-    const nm=n.value.trim(); if(!nm) return;
-    out.push({name:nm, day:Number(days[i].value)||0, type:guessTaskType(nm)});
+  rows.forEach(row=>{
+    const nameEl=row.querySelector('.tl-name');
+    const dayEl=row.querySelector('.tl-day');
+    if(!nameEl) return;
+    const nm=(nameEl.value||'').trim(); if(!nm) return;
+    out.push({name:nm, day:Number(dayEl?.value)||0, type:guessTaskType(nm)});
   });
   return out;
 }
@@ -3674,36 +4255,189 @@ function guessTaskType(name){
   if(n.includes('carbon')) return 'Carbonation';
   return 'Other';
 }
-function addTimelineStage(){
-  const recipe=window.tlEditRecipe||timelineRecipes()[0];
-  const cur=readTimelineInputs();
-  const lastDay=cur.length?cur[cur.length-1].day:0;
-  cur.push({name:'New Stage', day:lastDay+1, type:'Other'});
-  const all=DB.get('timelineTemplates',{}); all[recipe]=cur; DB.set('timelineTemplates',all);
-  document.getElementById('settings-content').innerHTML=renderBatchSettings(DB.get('settings',{}));
+// ✅ hardening: wrapped in try/catch, same reasoning as saveTimelineTemplate
+// — an unguarded error here used to fail completely silently (no toast, no
+// console hint visible to Tony), which is indistinguishable from the button
+// simply not responding to clicks at all.
+//
+// ✅ second, subtler bug this uncovered: DB.set() catches its OWN internal
+// localStorage write errors (e.g. quota exceeded from a long session's worth
+// of accumulated test data) and just returns false — it never throws. Every
+// caller here used to ignore that return value, so if the browser's storage
+// was actually full, the write silently no-op'd, the UI re-rendered from the
+// (unchanged) stored data, and a new stage — or a saved edit — would just
+// never appear. From the outside that looks EXACTLY like "the button did
+// nothing," with no error anywhere to explain why. Checking the return value
+// turns that into a specific, actionable message instead of silence.
+function saveTimelineDataOrWarn(all){
+  const ok=DB.set('timelineTemplates',all);
+  if(!ok) toast('บันทึกไม่สำเร็จ — พื้นที่จัดเก็บข้อมูลในเบราว์เซอร์อาจเต็ม ลองรีเฟรชหน้า หรือปิดแท็บเก่าๆ ที่เปิดค้างไว้แล้วลองใหม่','⚠️');
+  return ok;
 }
-function removeTimelineStage(i){
-  const recipe=window.tlEditRecipe||timelineRecipes()[0];
-  const cur=readTimelineInputs(); cur.splice(i,1);
-  const all=DB.get('timelineTemplates',{}); all[recipe]=cur; DB.set('timelineTemplates',all);
-  document.getElementById('settings-content').innerHTML=renderBatchSettings(DB.get('settings',{}));
+// ✅ Both functions now toast on SUCCESS too (they used to stay silent and
+// just re-render, with no toast either way) — Tony reported "nothing at all
+// happens, totally silent" when clicking Add Stage/Remove, and without a
+// success signal there was no way to tell "the click didn't register at
+// all" apart from "it worked, but the new/changed row is scrolled out of
+// view so it looks unchanged." A toast now fires either way, and Add Stage
+// also scrolls the new row into view so it's impossible to miss even in a
+// long scrolled list.
+//
+// ✅ round 5: Tony then reported the toast DOES fire ("เพิ่มขั้นตอนแล้ว") but
+// the row list stays exactly the same — no new row anywhere. The old code
+// re-rendered via refreshTimelineSurface(source), which calls
+// renderTimelineEditModalBody() → timelineStageRowsHtml(recipe,'modal') →
+// getTimeline(recipe) → a FRESH DB.get('timelineTemplates') read, immediately
+// after the DB.set() that just wrote it. That's a read-immediately-after-write
+// round trip through localStorage for no real reason — we already have the
+// exact final array (`cur`) sitting in memory. Rendering `cur` directly below
+// removes that round trip entirely, so the visible row list can no longer
+// diverge from what was actually just saved, whatever the underlying cause of
+// that divergence was on Tony's machine. The toast also now states the live
+// row count so a future report can say "toast said 10 but I count 9" instead
+// of "nothing changed" — much easier to pin down if this ever recurs.
+function addTimelineStage(source){
+  try{
+    const recipe=window.tlEditRecipe||timelineRecipes()[0];
+    const cur=readTimelineInputs(timelineContainerId(source));
+    const lastDay=cur.length?cur[cur.length-1].day:0;
+    cur.push({name:'New Stage', day:lastDay+1, type:'Other'});
+    const all=DB.get('timelineTemplates',{}); all[recipe]=cur;
+    if(!saveTimelineDataOrWarn(all)) return;
+    const container=document.getElementById(timelineContainerId(source));
+    if(container) container.innerHTML=stagesRowsHtml(cur, source);
+    const warnEl=document.getElementById(timelineWarningElId(source));
+    if(warnEl) warnEl.style.display='none';
+    toast(`เพิ่มขั้นตอนแล้ว — ตอนนี้มีทั้งหมด ${cur.length} ขั้นตอน (เลื่อนลงไปดูด้านล่างสุด)`,'✓');
+    const lastRow=container&&container.lastElementChild;
+    if(lastRow&&lastRow.scrollIntoView) lastRow.scrollIntoView({block:'center',behavior:'smooth'});
+  }catch(e){
+    console.error('addTimelineStage error:',e);
+    toast('เพิ่มขั้นตอนไม่สำเร็จ — เกิดข้อผิดพลาด ลองรีเฟรชหน้าแล้วลองใหม่','⚠️');
+  }
 }
-function saveTimelineTemplate(){
-  const recipe=window.tlEditRecipe||timelineRecipes()[0];
-  const stages=readTimelineInputs();
-  if(!stages.length){ toast('Add at least one stage','⚠️'); return; }
-  const all=DB.get('timelineTemplates',{}); all[recipe]=stages; DB.set('timelineTemplates',all);
-  regenerateSchedule();
+function removeTimelineStage(i, source){
+  try{
+    const recipe=window.tlEditRecipe||timelineRecipes()[0];
+    const cur=readTimelineInputs(timelineContainerId(source)); cur.splice(i,1);
+    const all=DB.get('timelineTemplates',{}); all[recipe]=cur;
+    if(!saveTimelineDataOrWarn(all)) return;
+    const container=document.getElementById(timelineContainerId(source));
+    if(container) container.innerHTML=stagesRowsHtml(cur, source);
+    const warnEl=document.getElementById(timelineWarningElId(source));
+    if(warnEl) warnEl.style.display='none';
+    toast(`ลบขั้นตอนแล้ว — เหลือทั้งหมด ${cur.length} ขั้นตอน`,'✓');
+  }catch(e){
+    console.error('removeTimelineStage error:',e);
+    toast('ลบขั้นตอนไม่สำเร็จ — เกิดข้อผิดพลาด ลองรีเฟรชหน้าแล้วลองใหม่','⚠️');
+  }
+}
+// ✅ Root-caused Tony's "save timeline for [product] failed" report: the
+// actual data write (DB.set below) always succeeded — the crash was
+// happening one step later, inside regenerateSchedule() while rebuilding
+// the Schedule page's task list from ALL batches (see the genTasks()
+// hardening note above), and the old code's single try/catch around
+// EVERYTHING meant that unrelated failure made a successful save look like
+// it had failed. Now the save + success toast happen first and are
+// reported honestly; the schedule-refresh step is separately wrapped so a
+// problem there degrades to its own (much less alarming) notice instead of
+// masquerading as "your edit didn't save."
+// A batch stamps timelineIncomplete:true at creation time if its product
+// had no custom timeline yet (see createBatchFromOrder / the QC banner this
+// whole flow is triggered from). Saving a template here doesn't touch those
+// already-created batches unless we explicitly go clear the flag — without
+// this, the QC banner that sent Tony into this modal in the first place
+// would still be sitting there after a successful save, reading exactly
+// like the save had failed all over again.
+function clearTimelineIncompleteForProduct(productId){
+  const batches=DB.get('batches',[]);
+  let changed=false;
+  batches.forEach(b=>{
+    if(b.product===productId && b.timelineIncomplete){
+      b.timelineIncomplete=false; b.timelineIncompleteReason=''; changed=true;
+    }
+  });
+  if(changed) DB.set('batches',batches);
+  if(document.getElementById('qc-batch-list')) renderQC();
+}
+function saveTimelineTemplate(source){
+  let recipe, stages;
+  try{
+    recipe=window.tlEditRecipe||timelineRecipes()[0];
+    if(!recipe){ toast('เลือกสินค้าก่อนบันทึก Timeline','⚠️'); return; }
+    stages=readTimelineInputs(timelineContainerId(source));
+    if(!stages.length){ toast('ต้องมีอย่างน้อย 1 ขั้นตอน — ใส่ชื่อขั้นตอนก่อนบันทึก','⚠️'); return; }
+    const all=DB.get('timelineTemplates',{}); all[recipe]=stages;
+    if(!saveTimelineDataOrWarn(all)) return;
+  }catch(e){
+    console.error('saveTimelineTemplate error:',e);
+    toast('บันทึกไม่สำเร็จ — เกิดข้อผิดพลาด ลองรีเฟรชหน้าแล้วลองใหม่','⚠️');
+    return;
+  }
+  clearTimelineIncompleteForProduct(recipe);
   const prod=DB.get('products',[]).find(p=>p.id===recipe);
   toast(`บันทึก Timeline สำหรับ ${prod?prod.name:recipe} แล้ว — งานในตารางอัปเดตให้อัตโนมัติ`,'✓');
-  document.getElementById('settings-content').innerHTML=renderBatchSettings(DB.get('settings',{}));
+  try{
+    regenerateSchedule();
+  }catch(e){
+    console.error('saveTimelineTemplate: schedule refresh failed (the timeline itself was still saved):',e);
+    toast('บันทึก Timeline สำเร็จแล้ว แต่รีเฟรชตารางงานอัตโนมัติไม่สำเร็จ — ลองรีเฟรชหน้าเพื่อดูตารางล่าสุด','⚠️');
+  }
+  try{
+    // Modal: close on save (standard "save and close" pattern, matches
+    // every other modal in this app) rather than re-rendering it just to
+    // immediately tear it down. Settings page: stays open — the warning
+    // banner ("ยังไม่เคยตั้งค่าเฉพาะสินค้านี้") should disappear now that a
+    // custom template was just saved, and the row list should reflect
+    // exactly what was saved.
+    //
+    // ✅ same class of fix as addTimelineStage/removeTimelineStage: Tony
+    // reported the Settings-page warning banner staying stuck after Save —
+    // the old code called refreshTimelineSurface('settings'), which rebuilds
+    // the whole panel via another DB.get('timelineTemplates') read right
+    // after the write that just happened. Toggling the banner directly (and
+    // re-rendering the rows from the `stages` array already in memory)
+    // removes that same read-after-write round trip.
+    if(source==='modal'){
+      closeModal('modal-timeline-edit');
+    } else {
+      const container=document.getElementById(timelineContainerId(source));
+      if(container) container.innerHTML=stagesRowsHtml(stages, source);
+      const warnEl=document.getElementById(timelineWarningElId(source));
+      if(warnEl) warnEl.style.display='none';
+    }
+  }catch(e){
+    console.error('saveTimelineTemplate: UI refresh failed:',e);
+  }
 }
-function resetTimelineTemplate(){
-  const recipe=window.tlEditRecipe||timelineRecipes()[0];
-  const all=DB.get('timelineTemplates',{}); all[recipe]=defaultTimeline(); DB.set('timelineTemplates',all);
-  regenerateSchedule();
-  document.getElementById('settings-content').innerHTML=renderBatchSettings(DB.get('settings',{}));
+function resetTimelineTemplate(source){
+  let recipe, stages;
+  try{
+    recipe=window.tlEditRecipe||timelineRecipes()[0];
+    stages=defaultTimeline();
+    const all=DB.get('timelineTemplates',{}); all[recipe]=stages;
+    if(!saveTimelineDataOrWarn(all)) return;
+  }catch(e){
+    console.error('resetTimelineTemplate error:',e);
+    toast('รีเซ็ตไม่สำเร็จ — เกิดข้อผิดพลาด ลองรีเฟรชหน้าแล้วลองใหม่','⚠️');
+    return;
+  }
+  clearTimelineIncompleteForProduct(recipe);
   toast(`Timeline reset for ${recipe}`,'↺');
+  try{ regenerateSchedule(); }catch(e){ console.error('resetTimelineTemplate: schedule refresh failed:',e); }
+  // ✅ same fix as addTimelineStage/removeTimelineStage: render the exact
+  // array we just saved directly, instead of routing through
+  // refreshTimelineSurface() → getTimeline() → another DB.get() read.
+  try{
+    const container=document.getElementById(timelineContainerId(source));
+    if(container) container.innerHTML=stagesRowsHtml(stages, source);
+    // Reset writes an explicit entry for this product (a copy of the
+    // default), same as Save does — hasCustomTimeline() only checks
+    // "does an entry exist", so per that same definition the warning hides
+    // here too, matching what a DB round-trip would have computed anyway.
+    const warnEl=document.getElementById(timelineWarningElId(source));
+    if(warnEl) warnEl.style.display='none';
+  }catch(e){ console.error('resetTimelineTemplate: UI refresh failed:',e); }
 }
 function regenerateSchedule(){
   refreshAllTasks();
@@ -4023,11 +4757,23 @@ function checkTeamPinGate(){
   if(localStorage.getItem(verifiedKey)===required) return; // this device already verified this exact PIN
   const overlay=document.getElementById('modal-pin-gate');
   if(!overlay) return;
+  // ✅ race-condition guard: checkTeamPinGate() is also called from
+  // gsheetsPullAll().then(...) at boot, and that pull can resolve late on a
+  // slow connection. If the gate is already open (the visitor is mid-entry),
+  // re-running the setup below would blank their partially-typed PIN and
+  // wipe out an "incorrect PIN" message they were still looking at. Once
+  // it's showing, only its own submit() decides when to close it.
+  if(overlay.style.display==='flex') return;
   overlay.style.display='flex';
   const field=document.getElementById('pin-gate-field');
   const errEl=document.getElementById('pin-gate-error');
   const btn=document.getElementById('pin-gate-btn');
+  const forgotBtn=document.getElementById('pin-gate-forgot-btn');
+  const forgotPanel=document.getElementById('pin-gate-forgot-panel');
+  const forgotCancelBtn=document.getElementById('pin-gate-forgot-cancel-btn');
+  const forgotConfirmBtn=document.getElementById('pin-gate-forgot-confirm-btn');
   field.value=''; errEl.style.display='none';
+  forgotPanel.style.display='none';
   setTimeout(()=>field.focus(),50);
   function submit(){
     if((field.value||'').trim()===required){
@@ -4040,6 +4786,18 @@ function checkTeamPinGate(){
   }
   btn.onclick=submit;
   field.onkeydown=function(e){ if(e.key==='Enter') submit(); };
+  // ✅ recovery path — see the HTML comment above #pin-gate-forgot-panel for
+  // why this exists: without it, a wrong/forgotten PIN or an unverified new
+  // device left the visitor with literally nothing clickable, forever.
+  forgotBtn.onclick=function(){ forgotPanel.style.display='block'; };
+  forgotCancelBtn.onclick=function(){ forgotPanel.style.display='none'; };
+  forgotConfirmBtn.onclick=async function(){
+    DB.set('team_pin', []);
+    localStorage.removeItem(verifiedKey);
+    overlay.style.display='none';
+    forgotPanel.style.display='none';
+    toast('รีเซ็ตรหัส PIN แล้ว — ตั้งรหัสใหม่ได้จากหน้าตั้งค่า','✓');
+  };
 }
 async function saveTeamPin(){
   const val=(document.getElementById('team-pin-input').value||'').trim();
@@ -4385,16 +5143,29 @@ function saveProduct(){
   const status=document.getElementById('f-prod-status').value;
   const abbr=name.replace(/[^A-Za-z]/g,'').slice(0,4).toUpperCase()||'NEW';
   const products=DB.get('products',[]);
+  let newId=editId;
   if(editId){
     const p=products.find(x=>x.id===editId);
     if(p){ Object.assign(p,{name,category,style,size,color,status}); }
   } else {
     let id=abbr, n=1;
     while(products.some(x=>x.id===id)){ id=abbr+n; n++; }
+    newId=id;
     products.push({id,name,category,style,size,color,abbr,status});
   }
   DB.set('products',products);
   closeModal('modal-product');
+  // ✅ #14: came from the order form's "+ Add new product" — hand control
+  // back to the order modal (still open underneath) with the new product
+  // selected and ETA recalculated, instead of dropping into Settings.
+  if(window._productModalOrderContext){
+    window._productModalOrderContext=false;
+    populateOrderProductSelect(newId);
+    const eta=document.getElementById('f-order-eta');
+    if(eta) eta.value=calcOrderETA(newId, todayStr());
+    toast(editId?'Product updated':`Product added — "${name}" selected for this order`,'✓');
+    return;
+  }
   renderSettings();
   toast(editId?'Product updated':'Product added','✓');
 }
@@ -4467,6 +5238,18 @@ function formatDateLong(d){
   const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${days[dt.getDay()]}, ${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+// ✅ item-2b: "ประทับวันที่บันทึกข้อมูลด้วย" — an audit-style "last recorded"
+// timestamp (date + time), separate from the order/ETA/brew dates which are
+// all just calendar dates the user picks. Accepts an ISO string (Date.now()
+// via new Date().toISOString(), what saveOrder() stamps into updatedAt).
+function formatDateTime(iso){
+  if(!iso) return '—';
+  const dt=new Date(iso);
+  if(isNaN(dt)) return '—';
+  const datePart=`${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getFullYear()).slice(2)}`;
+  const timePart=`${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+  return `${datePart} ${timePart}`;
 }
 
 // ══════════════════════════════════════════════════════
@@ -4660,24 +5443,40 @@ function genTasks(batches){
   batches = batches || liveBatchesForSchedule();
   const tasks=[];
   const baseTime=['09:00','09:30','10:00','11:00','13:00','14:00','15:00','10:00','08:00','09:00'];
+  // ✅ hardening (root-caused Tony's "save timeline for [product]" failure):
+  // this used to be one flat forEach with no error isolation — ANY single
+  // malformed batch (bad brewDate, missing product, etc.) threw and aborted
+  // task generation for EVERY batch, which propagated all the way up through
+  // regenerateSchedule() → saveTimelineTemplate()'s catch block. The timeline
+  // edit itself had already been written to storage by then (DB.set runs
+  // before regenerateSchedule — see saveTimelineTemplate), so the save had
+  // actually succeeded, but the crash during the *unrelated* schedule
+  // refresh step made the whole operation look like a failure and showed a
+  // scary "save failed" toast. Isolating each batch means one bad batch's
+  // tasks just get skipped (logged, not silently lost) instead of taking
+  // down every other batch's schedule too.
   batches.forEach(b=>{
-    const bd=b.brewDate;
-    const schedule=getTimeline(b.product);
-    schedule.forEach((s,i)=>{
-      const date=addDays(bd, Number(s.day)||0);
-      tasks.push({
-        id:`${b.id}-T${i}`,batchId:b.id,orderId:b.orderId||null,product:b.product,
-        style:b.style,tank:b.tank,brewDate:b.brewDate,
-        name:s.name,type:s.type||'Other',
-        date:date,
-        time:baseTime[i]||'09:00',
-        urgency:calcUrgency(date),
-        stage:b.stage,assignee:b.assignee,
-        star:b.star,done:false,fromTemplate:true,
-        linkedQCParam: guessQCParamFromTaskName(s.name),
-        note:`${s.name} for batch ${b.id}${b.orderId?' (Order '+b.orderId+')':''}. Day ${s.day} from brew.`,
+    try{
+      const bd=b.brewDate;
+      const schedule=getTimeline(b.product);
+      schedule.forEach((s,i)=>{
+        const date=addDays(bd, Number(s.day)||0);
+        tasks.push({
+          id:`${b.id}-T${i}`,batchId:b.id,orderId:b.orderId||null,product:b.product,
+          style:b.style,tank:b.tank,brewDate:b.brewDate,
+          name:s.name,type:s.type||'Other',
+          date:date,
+          time:baseTime[i]||'09:00',
+          urgency:calcUrgency(date),
+          stage:b.stage,assignee:b.assignee,
+          star:b.star,done:false,fromTemplate:true,
+          linkedQCParam: guessQCParamFromTaskName(s.name),
+          note:`${s.name} for batch ${b.id}${b.orderId?' (Order '+b.orderId+')':''}. Day ${s.day} from brew.`,
+        });
       });
-    });
+    }catch(e){
+      console.error('genTasks: skipping batch due to error', b&&b.id, e);
+    }
   });
   // keep any manually-added (non-template) tasks that already exist
   const manual=DB.get('tasks',[]).filter(t=>!t.fromTemplate);
@@ -4707,11 +5506,23 @@ function calcUrgency(date){
 
 // done-state persistence: task list is regenerated from QC on every load,
 // so completed flags live in their own map and are re-applied here.
+// ✅ item-2 fix: this used to clean out (delete) map entries after 7 days —
+// but getFiltered() below only kept a DONE task *visible* for 24h. So the
+// actual lived behavior was: task fades away after 1 day, then — because its
+// taskDoneMap entry got deleted at the 7-day mark — genTasks()/applyDoneMap()
+// stopped re-applying done:true to it, and it popped back up as an ACTIVE,
+// undone task forever after. That contradicts "หายไปจากการแสดง...ภายใน 1
+// สัปดาห์" (fade+sink, then disappear for good within a week) — a task that
+// resurrects as pending isn't gone, it's a re-opened checkpoint. Fix: keep
+// the "this was completed" memory for a long time (storage hygiene only,
+// comfortably past the 7-day display window so there's no boundary race),
+// and let getFiltered() alone control how long it stays visible.
 function applyDoneMap(tasks){
   const m=DB.get('taskDoneMap',{});
   let changed=false;
-  // clean out entries older than 7 days
-  Object.keys(m).forEach(k=>{ if(Date.now()-m[k]>7*86400000){ delete m[k]; changed=true; } });
+  // clean out entries older than 45 days — pure storage hygiene, well past
+  // the 7-day visible window, never the thing that decides visibility.
+  Object.keys(m).forEach(k=>{ if(Date.now()-m[k]>45*86400000){ delete m[k]; changed=true; } });
   if(changed) DB.set('taskDoneMap',m);
   tasks.forEach(t=>{ if(m[t.id]){ t.done=true; t.doneAt=m[t.id]; } });
   return tasks;
@@ -4731,12 +5542,14 @@ function getFiltered(){
   const assignee=document.getElementById('f-assignee')?.value||'';
   const sort=document.getElementById('f-sort')?.value||'time';
   let tasks=ALL_TASKS.filter(t=>{
-    // completed tasks stay visible for 24h (so the "Done" state is seen), then auto-hide
-    if(t.done) return t.doneAt && (Date.now()-t.doneAt < 86400000);
+    // ✅ item-2: fade+sink, then disappear from the app entirely 1 week after
+    // completion (was 24h — see the comment on applyDoneMap for why that
+    // used to make finished checkpoints wrongly reappear as pending later).
+    if(t.done) return t.doneAt && (Date.now()-t.doneAt < 7*86400000);
     return true;
   });
   if(currentTab!=='all') tasks=tasks.filter(t=>t.urgency===currentTab);
-  if(search) tasks=tasks.filter(t=>(t.batchId+t.product+t.name+t.style).toLowerCase().includes(search));
+  if(search) tasks=tasks.filter(t=>(t.batchId+(t.orderId||'')+t.product+t.name+t.style).toLowerCase().includes(search));
   if(prod) tasks=tasks.filter(t=>t.product===prod);
   if(type) tasks=tasks.filter(t=>t.type.includes(type)||t.name.includes(type));
   if(assignee) tasks=tasks.filter(t=>t.assignee===assignee);
@@ -5289,7 +6102,33 @@ setInterval(()=>{
 #tour-overlay{position:fixed;inset:0;z-index:5000;pointer-events:none;display:none}
 #tour-overlay.open{display:block}
 #tour-spot{position:absolute;border-radius:14px;box-shadow:0 0 0 9999px rgba(15,17,21,.68);transition:top .35s cubic-bezier(.4,0,.2,1),left .35s cubic-bezier(.4,0,.2,1),width .35s cubic-bezier(.4,0,.2,1),height .35s cubic-bezier(.4,0,.2,1);pointer-events:none}
-#tour-card{position:absolute;width:320px;max-width:88vw;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.35);pointer-events:auto;transition:top .35s cubic-bezier(.4,0,.2,1),left .35s cubic-bezier(.4,0,.2,1);overflow:hidden}
+/* ✅ item-1 hardening: "กดถัดไปไม่ได้ กลับก็ไม่ได้ กดข้ามได้อย่างเดียว" — Skip
+   sits in the header (top of the card) while Next/Back sit in the footer
+   (bottom). The one layout bug that produces exactly that symptom is the
+   footer being pushed outside the viewport: tourPositionFor() below could
+   previously compute a negative `top` for an oversized card, and the card
+   itself had no height cap — so on a shorter window (or after this session's
+   step-text got longer), the footer could render below the visible area
+   while the header stayed on-screen. max-height + overflow-y:auto is a hard
+   backstop: no matter how tall the content gets, the card itself never
+   exceeds the viewport and its footer is always reachable (by scrolling the
+   card if needed), independent of whatever the positioning math computes. */
+/* ✅ item-1 round 2: "รายการแรก...ไม่ขึ้นข้อความให้เห็นมีแต่กรอบเปล่า กดปุ่ม
+   ถัดไปติดยากหรือไม่ติดเลย" (the first item shows an empty frame, Next is
+   hard/impossible to tap) — root cause confirmed via mobile emulation:
+   before tourPositionFor() has ever run (which for step 1 waits on a ~320ms
+   sidebar-open settle delay), #tour-card has no inline top/left at all, so a
+   bare `position:absolute` with nothing set falls back to (0,0) — pinned to
+   the extreme top-left corner of the screen, not the center where a person
+   would expect a dialog and would actually tap. The text IS there, it's just
+   rendered off in the corner (easy to read as "empty" if it clips against
+   the topbar/hamburger). Giving the card a CENTERED default via CSS means
+   the very first paint — before any target-finding/positioning JS has run —
+   is already correct, readable, and has Next/Back exactly where a user's
+   thumb goes. tourPositionFor() then overrides top/left/transform once it
+   knows the real spotlight target; transform is now covered by the
+   transition too, so that hand-off animates instead of jumping. */
+#tour-card{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:320px;max-width:88vw;max-height:82vh;overflow-y:auto;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.35);pointer-events:auto;transition:top .35s cubic-bezier(.4,0,.2,1),left .35s cubic-bezier(.4,0,.2,1),transform .35s cubic-bezier(.4,0,.2,1)}
 #tour-card .t-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0}
 #tour-card .t-badge{font-size:10.5px;font-weight:800;color:var(--orange,#F5A300);text-transform:uppercase;letter-spacing:.06em}
 #tour-card .t-skip{border:none;background:none;color:#9CA3AF;font-size:12px;font-weight:600;cursor:pointer;padding:4px}
@@ -5298,7 +6137,7 @@ setInterval(()=>{
 #tour-card .t-dots{display:flex;gap:5px;justify-content:center;padding:14px 0 2px}
 #tour-card .t-dot{width:6px;height:6px;border-radius:3px;background:#E5E7EB;transition:all .2s}
 #tour-card .t-dot.active{width:16px;background:var(--orange,#F5A300)}
-#tour-card .t-foot{display:flex;gap:8px;padding:12px 16px 16px}
+#tour-card .t-foot{display:flex;gap:8px;padding:12px 16px 16px;position:sticky;bottom:0;background:#fff}
 #tour-card .t-btn{flex:1;padding:9px 12px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer}
 #tour-card .t-btn.back{background:#F3F4F6;color:#374151;flex:0 0 auto;padding:9px 16px}
 #tour-card .t-btn.next{background:var(--orange,#F5A300);color:#fff}
@@ -5342,23 +6181,32 @@ setInterval(()=>{
 </button>
 
 <script>
+// ⛔ Tony asked to pull the guide tour out for now ("เอาฟังก์ชันไกด์ทัวร์ออก
+// ไปก่อน ขอแก้ปัญหาหลักของแอปก่อน") after it kept showing an empty card on
+// step 1 on his real machine (Edge/Windows) even though the same file
+// tested clean in automated Chromium runs — rather than keep guessing at a
+// browser/display quirk we can't reproduce, the tour is fully switched off
+// here so it can never block or confuse anyone while we focus on core app
+// bugs. Nothing below this flag was deleted — flip TOUR_ENABLED back to
+// true whenever we want to pick the tour back up.
+const TOUR_ENABLED=false;
+// ✅ item-1: Tony asked for the tour to be SHORT — "เลือกที่สำคัญเท่านั้น ที่
+// คิดว่าผู้ใช้น่าจะสับสน ผิดพลาดได้" (pick only the important ones — the
+// things a user is likely to get confused by or make mistakes on). Cut from
+// 19 steps down to 7, dropping the purely-decorative ones (stat cards, sync
+// dot, notif bell, user chip, monthly-goal card — all self-explanatory at a
+// glance) and keeping only: the parts of the app that changed behavior this
+// session, and the one place Tony himself said he's unsure how to use
+// (Batch Number Rule, see item-6 — mentioned here as "don't touch it" rather
+// than explained in detail, since even the person who built it isn't sure).
 const TOUR_STEPS=[
-  {sel:'.sidebar-logo',page:'dashboard',title:'ยินดีต้อนรับสู่ BWF Operation Hub',desc:'ทัวร์สั้นๆ นี้จะพาไปรู้จักทุกเมนูและฟังก์ชันหลักของระบบ กด "ถัดไป" เพื่อเริ่ม หรือ "ข้าม" ได้ทุกเมื่อ'},
-  {sel:'#nav-dashboard',page:'dashboard',title:'เมนู Dashboard',desc:'หน้าแรกสรุปภาพรวมทั้งหมด: สถิติการผลิต ออเดอร์ QC และตารางงานวันนี้'},
-  {sel:'#dash-stats',page:'dashboard',title:'การ์ดสถิติ',desc:'ตัวเลขสำคัญแบบเรียลไทม์ เช่น แบทช์ที่กำลังผลิต ถังที่ใช้งานอยู่ และออเดอร์วันนี้'},
-  {sel:'#dash-quick',page:'dashboard',title:'ปุ่มลัด (Quick Actions)',desc:'สร้างออเดอร์ใหม่ เพิ่มงาน หรือบันทึกผล QC ได้ในคลิกเดียวโดยไม่ต้องสลับหน้า'},
-  {sel:'#dash-mid-grid',page:'dashboard',title:'เป้าหมายรายเดือน & อันดับสินค้า',desc:'ติดตามความคืบหน้าเทียบเป้าหมายเดือนนี้ และดูสินค้าขายดีที่สุด กดไอคอนดินสอเพื่อแก้ไขเป้าหมาย'},
-  {sel:'#dash-orders-card',page:'dashboard',title:'สถานะออเดอร์',desc:'ดูรายการออเดอร์ล่าสุดพร้อมสถานะและกำหนดส่ง กด "View all orders" เพื่อดูทั้งหมด'},
-  {sel:'#dash-qc-card',page:'dashboard',title:'ภาพรวม QC',desc:'สรุปผลตรวจคุณภาพของแบทช์ที่กำลังดำเนินการ สีเขียว/ส้ม/แดงบอกสถานะผ่านหรือไม่ผ่าน'},
-  {sel:'#dash-schedule-card',page:'dashboard',title:'ตารางงานวันนี้',desc:'งานทั้งหมดที่ต้องทำวันนี้ แบ่งกลุ่มตามความเร่งด่วน (ตอนนี้ / เร็วๆนี้ / ภายหลัง / เลยกำหนด)'},
-  {sel:'#sync-indicator',page:'dashboard',title:'สถานะซิงค์ Google Sheets',desc:'จุดเขียว = ซิงค์ล่าสุดสำเร็จ, กะพริบส้ม = กำลังซิงค์, แดง = มีปัญหาให้ตรวจสิทธิ์ชีต'},
-  {sel:'.notif-btn',page:'dashboard',title:'การแจ้งเตือน',desc:'กดกระดิ่งเพื่อดูแจ้งเตือนล่าสุด เช่น งานใกล้ครบกำหนด หรือค่า QC ผิดปกติ'},
-  {sel:'.user-chip',page:'dashboard',title:'บัญชีผู้ใช้',desc:'ดูโปรไฟล์ สลับผู้ใช้ หรือออกจากระบบได้ที่นี่'},
-  {sel:'#nav-orders',page:'orders',title:'เมนู Orders',desc:'จัดการออเดอร์ทั้งหมด ค้นหา กรองตามสถานะ และเปิดดูรายละเอียดแต่ละออเดอร์'},
-  {sel:'#nav-qc',page:'qc',title:'เมนู QC Monitoring',desc:'ติดตามค่าตรวจคุณภาพของทุกแบทช์แบบละเอียด บันทึกค่าใหม่หรือแจ้งทีม QA ได้ที่นี่'},
-  {sel:'#qc-batch-list',page:'qc',title:'วิธีลงค่า QC',desc:'แต่ละแบทช์จะมีลำดับ checkpoint เรียงจากซ้ายไปขวา คลิกช่องที่ "ขอบสีฟ้า" (จุดที่ต้องวัดถัดไป) จะเปิดฟอร์มให้กรอกค่าที่วัดได้เทียบกับ Target แล้วกด Save — ระบบจะบันทึกเวลาอัตโนมัติและปลดล็อก checkpoint ถัดไปให้ทันที — กระบวนจะเตือนขั้นตอนถัดไปให้อัตโนมัติทุกครั้งหลังกด Save'},
-  {sel:'#nav-schedule',page:'schedule',title:'เมนู Schedule',desc:'ดูและจัดตารางงานผลิตทั้งหมด วางแผนล่วงหน้าได้สะดวก'},
-  {sel:'#nav-settings',page:'settings',title:'เมนู Settings',desc:'ตั้งค่าระบบ เชื่อมต่อ Google Sheets จัดการผู้ใช้ และปรับแต่งการแสดงผล'},
+  {sel:null,page:'dashboard',title:'ยินดีต้อนรับสู่ BWF Operation Hub',desc:'ทัวร์สั้นๆ นี้จะพาไปดูจุดที่มักสับสนที่สุดเท่านั้น กด "ถัดไป" เพื่อเริ่ม หรือ "ข้าม" ได้ทุกเมื่อ'},
+  {sel:'#dash-quick',page:'dashboard',title:'สร้างออเดอร์ใหม่',desc:'"+ New Order" พาไปทีละขั้นตอน: ลูกค้า → เลือก/เพิ่มสินค้าใหม่ → ไซส์/จำนวน → ความสำคัญ → วันส่งมอบ พอกด Save ระบบจะพาไปหน้า QC ให้ตั้งค่าเป้าหมาย + วันตรวจแต่ละ checkpoint ต่อทันที'},
+  {sel:'#qc-batch-list',page:'qc',title:'การ์ด QC แบบย่อ',desc:'แต่ละแบทช์ย่อเหลือแค่จุดไทม์ไลน์ (•——•——•——•) — แตะการ์ดเพื่อขยายดูรายละเอียด ในการ์ดที่ขยายแล้ว จุดที่ยังไม่ได้ตั้งเป้าหมายจะมีไอคอน ✎ ให้แก้ค่าได้ทันทีโดยไม่ต้องเปิดป็อปอัป'},
+  {sel:'#qc-batch-list',page:'qc',title:'วิธีลงค่า QC',desc:'คลิกช่องที่ "ขอบสีฟ้า" (checkpoint ถัดไปที่ต้องวัด) เพื่อกรอกค่าที่วัดได้ แล้วกด Save — ระบบบันทึกเวลาอัตโนมัติ ปลดล็อกขั้นตอนถัดไป และพาไปหน้า Schedule ให้ดูงานถัดไปของออเดอร์นี้เลย'},
+  {sel:'#tab-row',page:'schedule',title:'ยืนยันงานเสร็จในหน้า Schedule',desc:'แท็บ Now / Soon / Later / Overdue แบ่งงานตามกำหนดเวลา กดปุ่ม "✓ Make Done" เพื่อยืนยันงานเสร็จ — งานจะซีดลง เลื่อนไปท้ายรายการ แล้วหายไปเองภายใน 1 สัปดาห์ (กด Undo ได้ถ้ากดผิด)'},
+  {sel:'#nav-settings',page:'settings',title:'Settings ที่ควรรู้จัก',desc:'แท็บ System มีปุ่ม "Copy Shareable Link" แชร์ให้ทีมเชื่อมต่อชีตเดียวกัน และ Team Access PIN จำกัดว่าใครเข้าได้บ้าง — ส่วน "Batch Number Rule" ในแท็บ Batch Settings เป็นการตั้งค่าขั้นสูงที่แทบไม่ต้องแตะ ถ้าไม่แน่ใจข้ามไปได้เลย'},
+  {sel:'.notif-btn',page:'dashboard',title:'พร้อมใช้งานแล้ว',desc:'จบทัวร์แล้ว! กดปุ่ม "?" มุมขวาล่างได้ทุกเมื่อถ้าอยากดูทัวร์นี้อีกครั้ง'},
 ];
 
 let tourIdx=0;
@@ -5380,6 +6228,9 @@ function tourPositionFor(rect){
   left=Math.min(Math.max(margin,left), window.innerWidth-cardW-margin);
   card.style.top=top+'px';
   card.style.left=left+'px';
+  // cancel the CSS default centering transform (see #tour-card rule above) —
+  // top/left are now real pixel coordinates, not the center-anchor point.
+  card.style.transform='none';
 }
 
 function tourRender(){
@@ -5406,6 +6257,19 @@ function tourRender(){
   });
 
   requestAnimationFrame(()=>{
+    // ✅ item-1 round 2: step 1 ("Welcome") has no `sel` at all — it isn't
+    // teaching a specific UI element, so it no longer needs to find/scroll
+    // to/spotlight anything. That removes the one async chain most likely to
+    // be mid-flight (sidebar slide-open + settle) when a user's first tap
+    // lands, which was the real cause of "empty frame, Next doesn't
+    // register" — the card just stays at the CSS-centered default with no
+    // spotlight cutout, fully interactive from the very first paint.
+    if(!step.sel){
+      const spot=document.getElementById('tour-spot');
+      spot.style.width='0px'; spot.style.height='0px';
+      spot.style.top='50%'; spot.style.left='50%';
+      return;
+    }
     const el=document.querySelector(step.sel);
     if(!el){ tourNext(); return; }
     // Some targets (e.g. the sync indicator dot) are hidden with
@@ -5439,11 +6303,18 @@ function tourRender(){
 }
 
 function tourStart(){
+  if(!TOUR_ENABLED) return; // tour switched off — see flag near TOUR_STEPS
   tourIdx=0;
   document.getElementById('tour-overlay').classList.add('open');
   document.getElementById('tour-fab').style.display='none';
   const card=document.getElementById('tour-card');
-  card.style.position='absolute'; card.style.transform='';
+  // ✅ clear ALL inline positioning, not just transform — reopening via the
+  // "?" FAB after a previous run left stale top/left pixel values on this
+  // same element; clearing only transform while top/left stayed stale would
+  // un-center the card at a leftover position instead of the CSS default
+  // centered state. Clearing all three guarantees every fresh tourStart()
+  // begins from the same known-good centered state.
+  card.style.position='absolute'; card.style.top=''; card.style.left=''; card.style.transform='';
   document.getElementById('tour-pref-view').style.display='none';
   document.getElementById('tour-step-view').style.display='block';
   tourRender();
@@ -5487,6 +6358,7 @@ window.addEventListener('resize',()=>{
 });
 
 document.addEventListener('DOMContentLoaded',()=>{
+  if(!TOUR_ENABLED) return; // tour switched off — see flag above
   let seen=false;
   try{ seen=localStorage.getItem('bwf_tour_seen')==='1'; }catch(e){}
   if(seen){
