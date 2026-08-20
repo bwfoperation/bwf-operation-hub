@@ -569,6 +569,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
 .tc-batch{font-size:14px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:6px}
 .tc-style{font-size:12px;color:var(--tx2);margin-top:1px}
 .tc-tank{font-size:11px;color:var(--tx3);margin-top:1px;display:flex;align-items:center;gap:3px}
+.tc-mobile-id{display:none}
 .stage-badge{padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700}
 .stage-fermenting{background:var(--bl-b);color:var(--bl-t)}
 .stage-conditioning{background:var(--pu-b);color:var(--pu-t)}
@@ -747,6 +748,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
   .tc-task{padding:12px 14px}
   .tc-right{padding:12px 14px;min-width:120px}
   .filter-bar{gap:6px}
+  .tc-mobile-id{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:3px 0 4px}
 }
 
 </style>
@@ -805,7 +807,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
        label lets anyone confirm at a glance which build they're on, without
        needing to check the filename or ask. Bump the version string on
        every delivered file. -->
-  <div style="padding:6px 20px 12px;font-size:9.5px;color:var(--text3);letter-spacing:.02em">Build 2026-08-08.7</div>
+  <div style="padding:6px 20px 12px;font-size:9.5px;color:var(--text3);letter-spacing:.02em">Build 2026-08-08.15</div>
 </aside>
 
 <!-- MAIN -->
@@ -828,7 +830,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       <button class="lang-btn" id="lang-btn" onclick="cycleLang()" title="Language / ภาษา / 语言">TH</button>
       <button class="notif-btn" onclick="openNotifications()">
         🔔
-        <span class="notif-num">2</span>
+        <span class="notif-num" id="notif-badge" style="display:none">0</span>
       </button>
       <div class="user-chip" onclick="openUserMenu()">
         <div class="chip-av" id="top-av">🐱</div>
@@ -1203,7 +1205,7 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Batch ID</label>
-          <input class="form-input" id="f-batch-id" placeholder="Auto-generated">
+          <input class="form-input" id="f-batch-id" placeholder="Auto-generated" readonly style="background:var(--bg);color:var(--text2);cursor:not-allowed">
         </div>
         <div class="form-group">
           <label class="form-label">Product *</label>
@@ -1424,6 +1426,26 @@ nav{flex:1;padding:10px 8px;overflow-y:auto}
     <div class="modal-foot">
       <button class="btn btn-outline btn-sm" onclick="exportHistory()">⬇ Export CSV</button>
       <button class="btn btn-primary" onclick="closeModal('modal-history')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Tony: "ทำไมมีแจ้งเตือนตลอด กดไปละไม่เห็น" — the bell badge used to be a
+     hardcoded "2" in the HTML with no real data behind it, and clicking it
+     just toasted "No new notifications" (literally contradicting its own
+     badge). Now the badge is a real, live count of things that actually need
+     attention (overdue schedule tasks + batches with abnormal QC readings),
+     and clicking the bell opens this list so there's always something real
+     to see — or an honest "all clear" empty state when the count is 0. -->
+<div class="modal-overlay" id="modal-notifications">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">🔔 การแจ้งเตือน</div>
+      <button class="modal-close" onclick="closeModal('modal-notifications')">✕</button>
+    </div>
+    <div class="modal-body" id="notif-body"></div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="closeModal('modal-notifications')">Close</button>
     </div>
   </div>
 </div>
@@ -2740,8 +2762,10 @@ async function saveOrder(){
 async function createBatchFromOrder(orderRow){
   try{
     const productId=orderRow.product;
-    const settings=DB.get('settings',{batchPrefix:'BWF',batchNextNum:'023'});
-    const batchId=settings.batchPrefix+(settings.batchNextNum||'001');
+    const settings=DB.get('settings',{});
+    // ✅ ID merge (per Tony's request): a batch's ID is simply its Order ID —
+    // one number for the whole system instead of two parallel sequences.
+    const batchId=orderRow.orderId||orderRow.id;
     const tmpl=DB.get('qc_templates',[]).find(t=>t.id===productId);
     const hasTemplate=!!tmpl;
     // ✅ #9: same "flag it, don't just silently guess" treatment as the QC
@@ -2776,9 +2800,6 @@ async function createBatchFromOrder(orderRow){
     batches.unshift(batch);
     await Sheets.write('batches',batches);
     await logAudit('AUTO_CREATE','batches',batch);
-
-    settings.batchNextNum=String(parseInt(settings.batchNextNum||'022')+1).padStart(3,'0');
-    DB.set('settings',settings);
 
     // ✅ Auto-generate the schedule (Brew/Record OG, SG#1, SG#2, FG Stable, Dry
     // Hop, Cold Crash, Transfer, Packaging, Released) from this product's
@@ -2817,7 +2838,7 @@ function openBatchSetupWizard(batchId){
   document.getElementById('bsw-batch-id').value=batchId;
   const prod=DB.get('products',[]).find(p=>p.id===batch.product)||{};
   document.getElementById('bsw-context').textContent=
-    `${batch.orderId?('Order '+batch.orderId+' · '):''}${prod.name||batch.product} · Batch ${batch.batchId}`;
+    `${prod.name||batch.product} · ${batch.batchId}${(batch.orderId&&batch.orderId!==batch.batchId)?(' · Order '+batch.orderId):''}`;
   const tmpl=DB.get('qc_templates',[]).find(x=>x.id===batch.product);
   const timeline=getTimeline(batch.product);
   document.getElementById('bsw-cards').innerHTML=QC_PARAMS.map(p=>{
@@ -3223,8 +3244,8 @@ function renderBatchCard(b, flow, urgency){
       <div class="qcx-idblock">
         ${prodCircle(b.product,44,9,getProductAbbr(b.product))}
         <div>
-          <div class="qcx-id">${b.batchId}${b.orderId?` <span style="font-size:10px;font-weight:600;color:var(--text3)">· Order ${b.orderId}</span>`:''}</div>
-          <div class="qcx-idsub">${b.style||b.product} · ${b.tank}</div>
+          <div class="qcx-id">${b.batchId}${(b.orderId&&b.orderId!==b.batchId)?` <span style="font-size:10px;font-weight:600;color:var(--text3)">· Order ${b.orderId}</span>`:''}</div>
+          <div class="qcx-idsub" onclick="event.stopPropagation()">${b.style||b.product} · <span id="qcx-tank-${b.id}">${(b.tank&&b.tank!=='FV-?')?b.tank:'<span style="color:var(--orange-dark)">ยังไม่กำหนดถัง</span>'}</span> <span onclick="editBatchTankInline('${b.id}')" style="cursor:pointer;opacity:.65" title="แก้ไข Tank / FV">✎</span></div>
         </div>
       </div>
       <div class="qcx-metagroup">
@@ -3247,7 +3268,10 @@ function renderBatchCard(b, flow, urgency){
       <div class="qcx-flow" style="grid-template-columns:repeat(${flow.steps.length},minmax(118px,1fr))">
         ${flow.steps.map(s=>qcxCard(b,s)).join('')}
         ${flow.steps.map(s=>qcxNode(s)).join('')}
-        ${flow.steps.map(s=>`<div class="qcx-date ${s.state==='current'?'current':''}">${s.date}</div>`).join('')}
+        ${flow.steps.map(s=>{
+          const overdueStyle=s.date==='Overdue'?' style="color:var(--red);font-weight:700"':(s.date&&s.date.startsWith('Due Day')?' style="color:var(--text3);font-weight:600"':'');
+          return `<div class="qcx-date ${s.state==='current'?'current':''}"${overdueStyle}>${s.date}</div>`;
+        }).join('')}
       </div>
     </div>
   </div>`;
@@ -3272,6 +3296,17 @@ function computeQCFlow(b){
   Object.values(b.qc||{}).forEach(d=>{ if(d.ts){ const t=new Date(d.ts.replace(' ','T')).getTime(); if(!isNaN(t)&&t>refTs) refTs=t; }});
   const brew=b.brewDate?new Date(b.brewDate).getTime():refTs;
   const day=Math.max(0,Math.round((refTs-brew)/86400000));
+  // ✅ Tony: "ทำไมขึ้น today now ตลอด" — the "current" (next-to-measure)
+  // checkpoint's little date badge used to hard-code "Today · now" no matter
+  // what, even though the card right above it already shows the checkpoint's
+  // real target window (e.g. "SG #1 (Day 2-3)") — so a brand-new Day-0 batch
+  // showed the exact same "Today · now" as one genuinely due today, which
+  // read as a contradiction. This now compares REAL calendar days elapsed
+  // since brew (same formula qcUrgency already uses below) against that
+  // checkpoint's dayFrom/dayTo window, so the badge actually agrees with the
+  // "(Day X-Y)" label: not due yet shows "Due Day X-Y", within the window
+  // shows "Today · now", and past it shows "Overdue".
+  const realDayFromBrew=b.brewDate?Math.max(0,Math.floor((Date.now()-new Date(b.brewDate).getTime())/86400000)):day;
 
   // build steps (hide pH when not measured — available via the ⋮ menu)
   const steps=[];
@@ -3290,12 +3325,20 @@ function computeQCFlow(b){
     else if(d.value) state='done';
     const isTemp=d.unit==='°C';
     const short=p.key==='fg'?'FG':(p.key==='ph'?'pH':(p.label.split(' ')[0]));
+    let currentDateLabel='Today · '+(fmtTime(d.ts)||'now');
+    if(p.dayFrom!=null){
+      if(realDayFromBrew<p.dayFrom){
+        currentDateLabel=`Due Day ${p.dayFrom}${(p.dayTo!=null&&p.dayTo!==p.dayFrom)?'–'+p.dayTo:''}`;
+      } else if(p.dayTo!=null && realDayFromBrew>p.dayTo){
+        currentDateLabel='Overdue';
+      }
+    }
     steps.push({
       key:p.key, label:p.label, target:d.target||'',
       state, att:d.attenuation||'',
       display:d.value?(d.value+(isTemp?'°C':'')):short,
       short,
-      date: state==='current' ? ('Today · '+(fmtTime(d.ts)||'now')) : fmtDayMon(d.ts)
+      date: state==='current' ? currentDateLabel : fmtDayMon(d.ts)
     });
   });
   // connector flags
@@ -3466,6 +3509,53 @@ async function saveQCTargetInline(batchId, paramKey){
   renderQC();
   toast('บันทึกค่าเป้าหมายแล้ว','✓');
 }
+// ✅ Tony: "ผมไม่เข้าใจการใช้งาน FV" — turned out there was genuinely no way
+// to set a batch's Tank/FV (fermentation vessel) anywhere in the normal
+// Orders → Batch Wizard flow: the wizard has no Tank field at all, so every
+// order-created batch is stuck showing the literal placeholder "FV-?"
+// forever. The only place that ever let you type a tank was the separate
+// "+ Add New Batch" button on this page — a totally different, order-less
+// batch-creation path most people would never use for their real batches.
+// This adds the same inline-edit pattern already used for QC targets, right
+// on the batch card, so any batch (however it was created) can have its
+// tank set/changed directly — same UX, same pencil icon.
+function editBatchTankInline(batchId){
+  const wrap=document.getElementById(`qcx-tank-${batchId}`);
+  if(!wrap) return;
+  const batches=DB.get('batches',[]);
+  const batch=batches.find(x=>x.id===batchId);
+  const current=(batch&&batch.tank&&batch.tank!=='FV-?')?batch.tank:'';
+  const inputId=`qcx-tank-input-${batchId}`;
+  wrap.innerHTML=`<input type="text" id="${inputId}" value="${current.replace(/"/g,'&quot;')}" placeholder="เช่น FV-01" style="width:72px;font-size:11px;padding:2px 4px;border:1px solid var(--border2);border-radius:4px;color:var(--text)" onclick="event.stopPropagation()">
+    <span onclick="event.stopPropagation();saveBatchTankInline('${batchId}')" style="cursor:pointer;color:var(--green);margin-left:3px;font-weight:700" title="บันทึก">✓</span>
+    <span onclick="event.stopPropagation();renderQC()" style="cursor:pointer;color:var(--text3);margin-left:2px" title="ยกเลิก">✕</span>`;
+  const inp=document.getElementById(inputId);
+  if(inp){
+    inp.focus(); inp.select();
+    inp.onkeydown=(e)=>{
+      e.stopPropagation();
+      if(e.key==='Enter'){ e.preventDefault(); saveBatchTankInline(batchId); }
+      else if(e.key==='Escape'){ renderQC(); }
+    };
+  }
+}
+async function saveBatchTankInline(batchId){
+  const inp=document.getElementById(`qcx-tank-input-${batchId}`);
+  const val=(inp?.value||'').trim();
+  const batches=DB.get('batches',[]);
+  const bi=batches.findIndex(x=>x.id===batchId);
+  if(bi<0) return;
+  batches[bi].tank = val || 'FV-?';
+  await Sheets.write('batches',batches);
+  await logAudit('UPDATE','batches',{id:batchId,field:'tank',value:batches[bi].tank});
+  // Tasks generated from this batch's timeline carry their own snapshot of
+  // the tank name (see genTasks) — regenerate so the Schedule page's task
+  // cards and detail panel reflect the new assignment too, not just the QC
+  // card.
+  try{ regenerateSchedule(); }catch(e){ console.error('saveBatchTankInline: schedule refresh failed:',e); }
+  renderQC();
+  toast('บันทึก Tank แล้ว','✓');
+}
 
 function qcxNode(s){
   const dotCls=s.state==='done'?'done':(s.state==='current'?'current':(s.state==='over'?'over':'pending'));
@@ -3622,6 +3712,7 @@ async function saveQCRecord(){
     if(btn){ btn.disabled=false; btn.textContent='Save Measurement'; }
     closeModal('modal-qc-record');
     renderQC();
+    updateNotifBadge();
     if(typeof renderDashboard==='function' && document.getElementById('dash-qc-card')) renderDashboard();
     const nextP=(pi>=0&&pi<QC_PARAMS.length-1)?QC_PARAMS[pi+1]:null;
     if(abnormalMsg){
@@ -3688,8 +3779,7 @@ function jumpToScheduleForBatch(batchId){
 function openBatchModal(){
   const prods=DB.get('products',[]);
   document.getElementById('f-batch-product').innerHTML='<option value="">Select product</option>'+prods.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-  const settings=DB.get('settings',{batchPrefix:'BWF',batchNextNum:'023'});
-  document.getElementById('f-batch-id').value=settings.batchPrefix+(settings.batchNextNum||'001');
+  document.getElementById('f-batch-id').value=peekOrderId();
   document.getElementById('f-batch-brew-date').value=todayStr();
   document.getElementById('f-batch-tank').value='';
   document.getElementById('qc-template-preview').innerHTML='Select a product to load QC template';
@@ -3719,7 +3809,7 @@ async function saveBatch(){
   const hasTemplate=!!tmpl;
   const prods=DB.get('products',[]);
   const p=prods.find(x=>x.id===product)||{};
-  const batchId=document.getElementById('f-batch-id').value||('BWF'+Date.now().toString().slice(-4));
+  const batchId=commitOrderId();
   const hasTimeline=hasCustomTimeline(product);
   const batch={
     id:batchId,batchId,orderId:null,product,style:p.style||p.name,status:'in-progress',
@@ -3743,10 +3833,6 @@ async function saveBatch(){
   batches.unshift(batch);
   await Sheets.write('batches',batches);
   await logAudit('CREATE','batches',batch);
-  // bump next batch number
-  const settings=DB.get('settings',{});
-  settings.batchNextNum=String(parseInt(settings.batchNextNum||'022')+1).padStart(3,'0');
-  DB.set('settings',settings);
   closeModal('modal-batch');
   renderQC();
   if(typeof renderDashboard==='function' && document.getElementById('dash-qc-card')) renderDashboard();
@@ -4193,26 +4279,33 @@ function renderBatchSettings(s){
       </div>
     </div>
 
-    <!-- ✅ item-6: Tony — "อยากให้เมนู batch number rule อยู่ล่างสุดกลัวผู้ใช้กดผิด
-         เพราะผมเองก็ไม่รู้ใช้งานยังไง" (want Batch Number Rule at the very
-         bottom, worried about mis-clicks since even I don't know how to use
-         it). Moved below Production Timeline (the section people actually
-         need day-to-day) and added a plain-language caption explaining what
-         it does and when to touch it, so it reads as "advanced, rarely
-         needed" rather than a mystery button next to everything else. -->
+    <!-- ✅ Tony chose "ยุบเป็นเลขเดียว ใช้ Order ID ทั้งระบบ" — Batch ID and
+         Order ID are now the exact same number everywhere (1 order = 1
+         batch, always). The separate "Batch Number Rule" counter is gone;
+         this single card controls the one shared sequence. -->
     <div class="card card-pad">
-      <div style="font-size:14px;font-weight:700;margin-bottom:4px">Batch Number Rule <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:none">(ตั้งค่าขั้นสูง — ปกติไม่ต้องแตะ)</span></div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:16px;max-width:520px;line-height:1.6">กำหนดรูปแบบเลข Batch ที่ระบบสร้างอัตโนมัติทุกครั้งที่มีออเดอร์ใหม่ เช่น "BWF" + "023" → BWF023 — แก้ตรงนี้เฉพาะตอนต้องการเปลี่ยนรูปแบบเลข Batch เท่านั้น (เช่น ขึ้นปีใหม่ หรือเปลี่ยนสาขา) ไม่เกี่ยวกับการสั่งออเดอร์หรือ QC ปกติ</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">Order Number Rule <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:none">(ตั้งค่าขั้นสูง — ปกติไม่ต้องแตะ)</span></div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px;max-width:560px;line-height:1.6">เลข Order นี้ใช้เป็นเลข Batch ด้วย (1 ออเดอร์ = 1 แบทช์เสมอในระบบนี้ ใช้เลขเดียวกันทั้งคู่ ไม่แยกกันอีกต่อไป) เลขถัดไปจะ<b>ไม่ถูกรีเซ็ตอัตโนมัติ</b>แม้ลบออเดอร์เก่าทิ้งหมดแล้ว — ตั้งใจให้เป็นแบบนี้ เพื่อไม่ให้เลขใหม่ไปซ้ำกับเลขเก่าที่อาจเขียนไว้ในใบเสร็จ/เอกสารแล้ว ถ้าเพิ่งล้างข้อมูลสาธิตและต้องการให้เริ่มนับใหม่จาก 001 ให้แก้เลขถัดไปตรงนี้</div>
       <div class="form-row-3">
-        <div class="form-group"><label class="form-label">Prefix</label><input class="form-input" value="${s.batchPrefix||'BWF'}" id="s-prefix"></div>
-        <div class="form-group"><label class="form-label">Next Number</label><input class="form-input" value="${s.batchNextNum||'023'}" id="s-nextnum"></div>
+        <div class="form-group"><label class="form-label">Prefix</label><div style="padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:14px;color:var(--text2)">${ORDER_ID_PREFIX}</div></div>
+        <div class="form-group"><label class="form-label">Next Number</label><input class="form-input" type="number" min="1" value="${s.orderNextNum||nextOrderNumFrom(DB.get('orders',[]))}" id="s-order-nextnum"></div>
         <div class="form-group"><label class="form-label">Preview</label>
-          <div style="padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:15px;font-weight:700">${s.batchPrefix||'BWF'}${s.batchNextNum||'023'}</div>
+          <div style="padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:15px;font-weight:700">${ORDER_ID_PREFIX}${String(s.orderNextNum||nextOrderNumFrom(DB.get('orders',[]))).padStart(3,'0')}</div>
         </div>
       </div>
-      <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="saveBatchSettings()">💾 Save Number Rule</button>
+      <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="saveOrderNumberRule()">💾 Save Number Rule</button>
     </div>
   </div>`;
+}
+function saveOrderNumberRule(){
+  const s=DB.get('settings',{});
+  const raw=document.getElementById('s-order-nextnum')?.value;
+  const n=parseInt(raw,10);
+  if(!raw || isNaN(n) || n<1){ toast('กรอกเลขถัดไปเป็นตัวเลขที่ถูกต้อง (เช่น 1)','⚠️'); return; }
+  s.orderNextNum=n;
+  DB.set('settings',s);
+  if(document.getElementById('settings-content')) document.getElementById('settings-content').innerHTML=renderBatchSettings(DB.get('settings',{}));
+  toast(`ตั้งเลข Order ถัดไปเป็น ${ORDER_ID_PREFIX}${String(n).padStart(3,'0')} แล้ว`,'✓');
 }
 
 function changeTimelineRecipe(r){
@@ -4467,9 +4560,22 @@ function renderNotificationsSettings(){
   </div>`;
 }
 
+// ✅ Tony: "ไม่เข้าใจการใช้งานส่วนนี้ ดูยากไป" (don't understand how to use
+// this, hard to follow). Root cause was more than layout — this page's
+// copy and 3-state Pending/Active/Suspended workflow made it LOOK like a
+// real login/access-control screen ("Approve" grants access, "Suspend"
+// revokes it), but nothing here actually gates access anywhere else in the
+// app: u.status is never read outside this one page, and there's no
+// login/invite system at all — anyone with the shared link already has full
+// access regardless of what's set here. Simplified to what this list
+// actually is: a plain team roster (for knowing who's on the team / who did
+// what in the audit log), with an honest explanation up top, only 2 states
+// (Active/Inactive) instead of 3, and buttons/confirm-text that no longer
+// imply access control that doesn't exist.
 function renderUsersSettings(){
   const users=DB.get('users',[]);
   return `<div>
+    <div style="font-size:12px;color:var(--text3);background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;line-height:1.6">ℹ️ รายชื่อนี้เป็น<b>ทำเนียบทีม</b>สำหรับดูว่าใครอยู่ในทีมบ้าง — <b>ไม่ใช่ระบบสิทธิ์เข้าใช้งาน</b> ทุกคนที่มีลิงก์เว็บนี้ใช้งานได้เหมือนกันหมดไม่ว่าจะมีชื่ออยู่ในรายการนี้หรือไม่ก็ตาม</div>
     <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
       <button class="btn btn-primary" onclick="openUserModal()">＋ Add User</button>
     </div>
@@ -4480,12 +4586,10 @@ function renderUsersSettings(){
           <td><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;font-size:14px">${u.av}</div><strong>${u.name}</strong></div></td>
           <td style="color:var(--text2)">${u.email}</td>
           <td><span class="badge badge-blue">${u.role}</span></td>
-          <td><span class="badge ${u.status==='active'?'badge-green':u.status==='pending'?'badge-orange':'badge-gray'}">${u.status.toUpperCase()}</span></td>
+          <td><span class="badge ${u.status==='active'?'badge-green':'badge-gray'}">${u.status==='active'?'ACTIVE':'INACTIVE'}</span></td>
           <td>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
-              ${u.status==='pending'?`<button class="btn btn-primary btn-sm" onclick="approveUser('${u.id}')">✓ Approve</button>`:''}
-              ${u.status==='active'?`<button class="btn btn-outline btn-sm" onclick="suspendUser('${u.id}')">⏸ Suspend</button>`:''}
-              ${u.status==='suspended'?`<button class="btn btn-outline btn-sm" onclick="approveUser('${u.id}')">▶ Reactivate</button>`:''}
+              ${u.status==='active'?`<button class="btn btn-outline btn-sm" onclick="suspendUser('${u.id}')">Mark Inactive</button>`:`<button class="btn btn-outline btn-sm" onclick="approveUser('${u.id}')">Mark Active</button>`}
               <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">🗑 Remove</button>
             </div>
           </td>
@@ -4507,32 +4611,29 @@ function saveNewUser(){
   if(!name||!email){ toast('Enter name and email','⚠️'); return; }
   const users=DB.get('users',[]);
   if(users.some(u=>u.email.toLowerCase()===email.toLowerCase())){ toast('That email is already in the list','⚠️'); return; }
-  users.push({id:'U'+Date.now(),name,email,role,status:'pending',av:'👤'});
+  // ✅ no more fake "pending" step — Tony (the person adding them) IS the
+  // approval, there's no separate request coming in from anywhere else, so
+  // making him hunt for a second "Approve" button was an unnecessary extra
+  // step for something with no real access effect anyway.
+  users.push({id:'U'+Date.now(),name,email,role,status:'active',av:'👤'});
   DB.set('users',users);
   closeModal('modal-user');
   renderSettings();
-  // Honest wording (#15): this app has no login/invite-email system — adding
-  // someone here only adds them to the local roster used for task assignment
-  // dropdowns. Anyone who opens the same link (connected to the same Google
-  // Sheet) already has full access regardless of this list, so "pending
-  // approval" was misleading. An admin still flips them to Active from here.
-  toast('Added to team roster — mark them Active when ready','✓');
+  toast('Added to team roster','✓');
 }
 function approveUser(id){
-  askConfirm('This grants this user access to the app.', ()=>{
-    const users=DB.get('users',[]);
-    const u=users.find(x=>x.id===id); if(u){ u.status='active'; DB.set('users',users); }
-    renderSettings();
-    toast('User approved','✓');
-  }, {icon:'✅', title:'Approve this user?'});
+  const users=DB.get('users',[]);
+  const u=users.find(x=>x.id===id); if(u){ u.status='active'; DB.set('users',users); }
+  renderSettings();
+  toast('Marked active','✓');
 }
 function suspendUser(id){
-  askConfirm('This user will immediately lose access until reactivated.', ()=>{
+  askConfirm('ไม่ได้เป็นการปิดกั้นการเข้าใช้งาน (แอปนี้ไม่มีระบบล็อกอิน) — แค่ทำเครื่องหมายว่าคนนี้ไม่ได้อยู่ในทีมแล้ว เพื่อให้ทำเนียบทีมตรงกับความจริง', ()=>{
     const users=DB.get('users',[]);
-    const u=users.find(x=>x.id===id); if(u){ u.status='suspended'; DB.set('users',users); }
+    const u=users.find(x=>x.id===id); if(u){ u.status='inactive'; DB.set('users',users); }
     renderSettings();
-    toast('User suspended','⏸');
-  }, {icon:'⏸', title:'Suspend this user?'});
+    toast('Marked inactive','⏸');
+  }, {icon:'⏸', title:'ทำเครื่องหมายว่าไม่อยู่ในทีมแล้ว?', confirmLabel:'Mark Inactive'});
 }
 function deleteUser(id){
   const users=DB.get('users',[]);
@@ -4599,7 +4700,7 @@ function renderSystemSettings(s){
         </div>
         <div class="form-group">
           <label class="form-label">Google Sheet ID</label>
-          <input class="form-input" id="gs-sheetid" placeholder="1AbCdEfGhIjKlmNoPQrStuVwxYZ" value="1sVNNKYSZE4nBmeJmf1_f3qoJlwG09O5REMCnGZRQUu0">
+          <input class="form-input" id="gs-sheetid" placeholder="1AbCdEfGhIjKlmNoPQrStuVwxYZ" value="${(CONFIG.SHEET_ID&&CONFIG.SHEET_ID!=='YOUR_GOOGLE_SHEET_ID')?CONFIG.SHEET_ID:''}">
         </div>
       </div>
       <div class="form-group" style="max-width:640px">
@@ -4924,18 +5025,6 @@ async function saveBrewerySettings(){
   DB.set('settings',s);
   toast('Brewery settings saved','✓');
 }
-async function saveBatchSettings(){
-  const s=DB.get('settings',{});
-  s.batchPrefix=document.getElementById('s-prefix')?.value||'BWF';
-  s.batchNextNum=document.getElementById('s-nextnum')?.value||'023';
-  s.fermentDays=parseInt(document.getElementById('s-ferment')?.value)||7;
-  s.crashDays=parseInt(document.getElementById('s-crash')?.value)||2;
-  s.conditionDays=parseInt(document.getElementById('s-condition')?.value)||3;
-  s.packDays=parseInt(document.getElementById('s-pack')?.value)||1;
-  DB.set('settings',s);
-  toast('Batch settings saved','✓');
-}
-
 // ══════════════════════════════════════════════════════
 //  HISTORY / AUDIT LOG
 // ══════════════════════════════════════════════════════
@@ -5219,7 +5308,64 @@ function viewTemplate(id){
   const batch=DB.get('batches',[]).find(b=>b.id===id);
   openTemplateModal(batch?batch.product:id);
 }
-function openNotifications(){toast('No new notifications','🔔')}
+// ✅ Real notifications (see comment on #modal-notifications): two kinds of
+// items actually need Tony's attention — schedule tasks that are overdue,
+// and batches with an abnormal (out-of-range) QC reading nobody has
+// resolved yet. Both are already-computed real state elsewhere in the app
+// (ALL_TASKS urgency, b.qc[x].abnormal) — this just collects them into one
+// list instead of inventing a separate fake notification store.
+function computeNotifications(){
+  const items=[];
+  const tasks=(typeof ALL_TASKS!=='undefined'?ALL_TASKS:[]).filter(t=>!t.done&&t.urgency==='overdue');
+  tasks.forEach(t=>{
+    items.push({
+      icon:'⏰',
+      title:t.name+(t.batchId?' — '+t.batchId:''),
+      subtitle:'เลยกำหนด · '+timeLabel(t),
+      action:`closeModal('modal-notifications');navigate('schedule',document.getElementById('nav-schedule'));setTimeout(()=>selectTask('${t.id}'),50)`
+    });
+  });
+  const batches=DB.get('batches',[]);
+  batches.forEach(b=>{
+    if(b.status==='completed') return;
+    const abnormalParams=Object.entries(b.qc||{}).filter(([,p])=>p&&p.abnormal).map(([key])=>{
+      const meta=QC_PARAMS.find(p=>p.key===key); return meta?meta.label:key;
+    });
+    if(abnormalParams.length){
+      items.push({
+        icon:'⚠️',
+        title:'ค่าผิดปกติ — '+b.batchId,
+        subtitle:abnormalParams.join(', '),
+        action:`closeModal('modal-notifications');navigate('qc',document.getElementById('nav-qc'));qcExpandedSet.add('${b.id}');renderQC()`
+      });
+    }
+  });
+  return items;
+}
+// Call after anything that can change overdue-task or abnormal-QC state —
+// wired into refreshAllTasks() (covers boot + most CRUD flows already) plus
+// the few places that mutate ALL_TASKS/QC directly without going through it.
+function updateNotifBadge(){
+  const badge=document.getElementById('notif-badge');
+  if(!badge) return;
+  const count=computeNotifications().length;
+  if(count>0){ badge.textContent=count>9?'9+':String(count); badge.style.display='flex'; }
+  else { badge.style.display='none'; }
+}
+function openNotifications(){
+  const items=computeNotifications();
+  const body=document.getElementById('notif-body');
+  body.innerHTML = items.length ? items.map(it=>`
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 4px;border-bottom:1px solid var(--border);cursor:pointer" onclick="${it.action}">
+        <div style="font-size:18px;flex-shrink:0">${it.icon}</div>
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${it.title}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${it.subtitle}</div>
+        </div>
+      </div>`).join('')
+    : `<div class="empty"><div class="empty-text">✓ ไม่มีการแจ้งเตือนใหม่ — งานทุกอย่างเรียบร้อยดี</div></div>`;
+  openModal('modal-notifications');
+}
 function openUserMenu(){toast('User menu','👤')}
 function closeAll(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'))}
 
@@ -5528,7 +5674,7 @@ function applyDoneMap(tasks){
   return tasks;
 }
 let ALL_TASKS = applyDoneMap(genTasks());
-function refreshAllTasks(){ ALL_TASKS = applyDoneMap(genTasks()); }
+function refreshAllTasks(){ ALL_TASKS = applyDoneMap(genTasks()); updateNotifBadge(); }
 let currentTab='now';
 let calView=false;
 let selectedTask=null;
@@ -5635,7 +5781,7 @@ function taskCard(t){
       <div class="prod-img" style="background:${p.color};font-size:${t.product?'8':'10'}px">${t.product?p.abbr.replace(/\n/g,'<br>'):t.type}</div>
       <div class="tc-prod-info">
         <div class="tc-batch">${t.batchId||'—'} <span class="stage-badge stage-${(t.stage||'').toLowerCase().replace(' ','-')}">${t.stage||''}</span></div>
-        ${t.orderId?`<div style="font-size:10px;color:var(--text3);font-weight:600">📦 Order ${t.orderId}</div>`:''}
+        ${(t.orderId&&t.orderId!==t.batchId)?`<div style="font-size:10px;color:var(--text3);font-weight:600">📦 Order ${t.orderId}</div>`:''}
         <div class="tc-style">${t.style||'—'}</div>
         <div class="tc-tank">🧪 ${t.tank||'—'}</div>
       </div>
@@ -5643,8 +5789,14 @@ function taskCard(t){
     <div class="tc-task">
       <div style="display:flex;align-items:flex-start;gap:10px">
         <div class="task-icon-wrap">${taskIcon(t.name)}</div>
-        <div>
+        <div style="min-width:0;flex:1">
           <div class="task-name">${t.name}</div>
+          <div class="tc-mobile-id">
+            <span style="font-size:13px;font-weight:700;color:var(--tx)">${t.batchId||'—'}</span>
+            <span class="stage-badge stage-${(t.stage||'').toLowerCase().replace(' ','-')}">${t.stage||''}</span>
+            ${t.style?`<span style="font-size:11px;color:var(--tx2)">${t.style}</span>`:''}
+            ${t.tank?`<span style="font-size:11px;color:var(--tx3)">🧪 ${t.tank}</span>`:''}
+          </div>
           ${t.date?`<div class="task-day">${dayLabel(t.date)}</div>`:''}
           <div class="task-time-row">🕐 <span>${timeLabel(t)}</span></div>
         </div>
@@ -5794,6 +5946,7 @@ function completeTask(id){
   const doneMap=DB.get('taskDoneMap',{}); doneMap[id]=t.doneAt; DB.set('taskDoneMap',doneMap);
   if(selectedTask===id) selectedTask=null;
   updateCounts();
+  updateNotifBadge();
   schRenderTasks();
   // ✅ Progress-driven order status + dashboard both stay in sync with real work done
   if(t.batchId) syncOrderStatusFromBatch(t.batchId);
@@ -5808,6 +5961,7 @@ function undoCompleteTask(id){
   t.done=false; t.doneAt=null;
   const doneMap=DB.get('taskDoneMap',{}); delete doneMap[id]; DB.set('taskDoneMap',doneMap);
   updateCounts();
+  updateNotifBadge();
   schRenderTasks();
   toast(`↺ "${t.name}" undone`,'↺');
 }
